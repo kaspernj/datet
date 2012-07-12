@@ -115,10 +115,6 @@ class Datet
     nil
   end
   
-  def values_arr
-    return [@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec, @t_usec]
-  end
-  
   #Returns a new Time-object based on the data of the Datet-object.
   def time
     return Time.new(@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec)
@@ -421,13 +417,13 @@ class Datet
   
   #Returns the month as an integer.
   def month
-    @mode = :months
+    Thread.current[:datet_mode] = :months
     return @t_month
   end
   
   #Returns the day in month as an integer.
   def date
-    @mode = :days
+    Thread.current[:datet_mode] = :days
     return @t_day
   end
   
@@ -544,15 +540,15 @@ class Datet
   # datet.months
   # datet.add_something(2)
   def add_something(val)
-    val = -val if @addmode == "-"
-    return self.add_years(val) if @mode == :years
-    return self.add_hours(val) if @mode == :hours
-    return self.add_days(val) if @mode == :days
-    return self.add_months(val) if @mode == :months
-    return self.add_mins(val) if @mode == :mins
-    return self.add_secs(val) if @mode == :secs
-    return self.add_usecs(val) if @mode == :usecs
-    raise "No such mode: #{@mode}"
+    val = -val if Thread.current[:datet_addmode] == "-"
+    return self.add_years(val) if Thread.current[:datet_mode] == :years
+    return self.add_hours(val) if Thread.current[:datet_mode] == :hours
+    return self.add_days(val) if Thread.current[:datet_mode] == :days
+    return self.add_months(val) if Thread.current[:datet_mode] == :months
+    return self.add_mins(val) if Thread.current[:datet_mode] == :mins
+    return self.add_secs(val) if Thread.current[:datet_mode] == :secs
+    return self.add_usecs(val) if Thread.current[:datet_mode] == :usecs
+    raise "No such mode: '#{Thread.current[:datet_mode]}'."
   end
   
   #Minus something.
@@ -560,7 +556,7 @@ class Datet
   # datet.months - 5
   # datet.years - 2
   def -(val)
-    @addmode = "-"
+    Thread.current[:datet_addmode] = "-"
     self.add_something(val)
   end
   
@@ -569,7 +565,7 @@ class Datet
   # datet.months + 5
   # datet.months + 2
   def +(val)
-    @addmode = "+"
+    Thread.current[:datet_addmode] = "+"
     self.add_something(val)
   end
   
@@ -579,7 +575,7 @@ class Datet
   # datet.hours + 5
   # datet.time #=> 2005-05-08 22:46:11 +0200
   def hours
-    @mode = :hours
+    Thread.current[:datet_mode] = :hours
     return self
   end
   
@@ -589,19 +585,19 @@ class Datet
   # datet.mins + 5
   # datet.mins #=> 2005-05-08 22:51:11 +0200
   def mins
-    @mode = :mins
+    Thread.current[:datet_mode] = :mins
     return self
   end
   
   #Sets the mode to seconds and gets ready to plus or minus.
   def secs
-    @mode = :secs
+    Thread.current[:datet_mode] = :secs
     return self
   end
   
   #Sets the mode to mili-seconds and gets ready to plus or minus.
   def usecs
-    @mode = :usecs
+    Thread.current[:datet_mode] = :usecs
     return self
   end
   
@@ -611,7 +607,7 @@ class Datet
   # datet.days + 26
   # datet.time #=> 2005-06-03 22:51:11 +0200
   def days
-    @mode = :days
+    Thread.current[:datet_mode] = :days
     return self
   end
   
@@ -621,7 +617,7 @@ class Datet
   # datet.months + 14
   # datet.time #=> 2006-08-01 22:51:11 +0200
   def months
-    @mode = :months
+    Thread.current[:datet_mode] = :months
     return self
   end
   
@@ -631,7 +627,7 @@ class Datet
   # datet.years + 5
   # datet.time #=> 2011-08-01 22:51:11 +0200
   def years
-    @mode = :years
+    Thread.current[:datet_mode] = :years
     return self
   end
   
