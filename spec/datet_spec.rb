@@ -1,6 +1,13 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "Datet" do
+  it "should have the same 'to_i' as normal time" do
+    time_i = Time.now.to_i
+    datet_i = Datet.new.to_i
+    
+    raise "Expected to be the same but they werent: #{time_i}  vs  #{datet_i}" if time_i != datet_i
+  end
+  
   it "should be able to make ago-strings" do
     time = Time.at(Time.now.to_i - 5)
     datet = Datet.in(time)

@@ -7,15 +7,14 @@ require "time"
 # datet.months + 5 #=> 2012-10-03 20:35:16 +0200
 # datet.days + 64 #=> 2012-12-06 20:35:16 +010
 class Datet
-  attr_accessor :time
-  
   #Initializes the object. Default is the current time. A time-object can be given.
   def initialize(time = Time.now, *args)
     if time.is_a?(Time)
-      @time = time
+      self.update_from_time(time)
     else
       begin
-        @time = Time.new(*([time] | args))
+        time = Time.new(*([time] | args))
+        self.update_from_time(time)
       rescue ArgumentError => e
         days_left = 0
         months_left = 0
@@ -64,7 +63,9 @@ class Datet
         end
         
         #Generate new stamp.
-        @time = Time.new(*([time] | args))
+        time = Time.new(*([time] | args))
+        self.update_from_time(time)
+        
         self.mins + mins_left if mins_left > 0
         self.hours + hours_left if hours_left > 0
         self.days + days_left if days_left > 0
@@ -73,6 +74,30 @@ class Datet
         self.usecs + usecs_left if usecs_left > 0
       end
     end
+  end
+  
+  #Updates the current variables to the given time.
+  #===Examples
+  # datet.update_from_time(Time.now)
+  def update_from_time(time)
+    @t_year = time.year
+    @t_month = time.month
+    @t_day = time.day
+    @t_hour = time.hour
+    @t_min = time.min
+    @t_sec = time.sec
+    @t_usec = time.usec
+    
+    nil
+  end
+  
+  def values_arr
+    return [@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec, @t_usec]
+  end
+  
+  #Returns a new Time-object based on the data of the Datet-object.
+  def time
+    return Time.new(@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec)
   end
   
   #Goes forward day-by-day and stops at a date matching the criteria given.
@@ -110,19 +135,21 @@ class Datet
   #Add a given amount of seconds to the object.
   def add_usecs(usecs = 1)
     usecs = usecs.to_i
-    cur_usecs = @time.usec
+    cur_usecs = @t_usec
     next_usec  = cur_usecs + usecs
     
     if next_usec >= 60
-      @time = self.add_secs(1).stamp(:datet => false, :usec => 0)
+      @t_usec = 0
+      self.add_secs(1)
       usecs_left = (usecs - 1) - (60 - cur_usecs)
-      return self.add_usecs(usecs_left) if usecs_left > 0
+      self.add_usecs(usecs_left) if usecs_left > 0
     elsif next_usec < 0
-      @time = self.add_secs(-1).stamp(:datet => false, :usec => 59)
+      @t_usec = 59
+      self.add_secs(-1)
       usecs_left = usecs + cur_usecs + 1
       self.add_usecs(usecs_left) if usecs_left > 0
     else
-      @time = self.stamp(:datet => false, :usec => next_usec)
+      time = self.stamp(:datet => false, :usec => next_usec)
     end
     
     return self
@@ -131,19 +158,21 @@ class Datet
   #Add a given amount of seconds to the object.
   def add_secs(secs = 1)
     secs = secs.to_i
-    cur_secs = @time.sec
+    cur_secs = @t_sec
     next_sec  = cur_secs + secs
     
     if next_sec >= 60
-      @time = self.add_mins(1).stamp(:datet => false, :sec => 0)
+      @t_sec = 0
+      self.add_mins(1)
       secs_left = (secs - 1) - (60 - cur_secs)
       return self.add_secs(secs_left) if secs_left > 0
     elsif next_sec < 0
-      @time = self.add_mins(-1).stamp(:datet => false, :sec => 59)
+      @t_sec = 59
+      self.add_mins(-1)
       secs_left = secs + cur_secs + 1
       self.add_secs(secs_left) if secs_left > 0
     else
-      @time = self.stamp(:datet => false, :sec => next_sec)
+      @t_sec = next_sec
     end
     
     return self
@@ -156,19 +185,21 @@ class Datet
   # datet.time #=> 2012-05-03 18:08:45 +0200
   def add_mins(mins = 1)
     mins = mins.to_i
-    cur_mins = @time.min
+    cur_mins = @t_min
     next_min  = cur_mins + mins
     
     if next_min >= 60
-      @time = self.add_hours(1).stamp(:datet => false, :min => 0)
+      @t_min = 0
+      self.add_hours(1)
       mins_left = (mins - 1) - (60 - cur_mins)
-      return self.add_mins(mins_left) if mins_left > 0
+      self.add_mins(mins_left) if mins_left > 0
     elsif next_min < 0
-      @time = self.add_hours(-1).stamp(:datet => false, :min => 59)
+      @t_min = 59
+      self.add_hours(-1)
       mins_left = mins + cur_mins + 1
       self.add_mins(mins_left) if mins_left > 0
     else
-      @time = self.stamp(:datet => false, :min => next_min)
+      @t_min = next_min
     end
     
     return self
@@ -180,19 +211,21 @@ class Datet
   # datet.add_hours(2)
   def add_hours(hours = 1)
     hours = hours.to_i
-    cur_hour = @time.hour
+    cur_hour = @t_hour
     next_hour = cur_hour + hours
     
     if next_hour >= 24
-      @time = self.add_days(1).stamp(:datet => false, :hour => 0)
+      @t_hour = 0
+      self.add_days(1)
       hours_left = (hours - 1) - (24 - cur_hour)
-      return self.add_hours(hours_left) if hours_left > 0
+      self.add_hours(hours_left) if hours_left > 0
     elsif next_hour < 0
-      @time = self.add_days(-1).stamp(:datet => false, :hour => 23)
+      @t_hour = 23
+      .add_days(-1)
       hours_left = hours + cur_hour + 1
       self.add_hours(hours_left) if hours_left < 0
     else
-      @time = self.stamp(:datet => false, :hour => next_hour)
+      @t_hour = next_hour
     end
     
     return self
@@ -207,21 +240,23 @@ class Datet
     days = days.to_i
     return self if days == 0
     dim = self.days_in_month
-    cur_day = @time.day
+    cur_day = @t_day
     next_day = cur_day + days
     
     if next_day > dim
-      @time = self.add_months(1).stamp(:datet => false, :day => 1)
+      @t_day = 1
+      self.add_months(1)
       days_left = (days - 1) - (dim - cur_day)
       self.add_days(days_left) if days_left > 0
     elsif next_day <= 0
       self.date = 1
       self.add_months(-1)
-      @time = self.stamp(:datet => false, :day => self.days_in_month)
+      
+      @t_day = self.days_in_month
       days_left = days + 1
       self.add_days(days_left) if days_left != 0
     else
-      @time = self.stamp(:datet => false, :day => next_day)
+      @t_day = next_day
     end
     
     return self
@@ -234,26 +269,30 @@ class Datet
   # datet.time #=> 2012-08-01 17:42:27 +0200
   def add_months(months = 1)
     months = months.to_i
-    cur_month = @time.month
-    cur_day = @time.day
+    cur_month = @t_month
+    cur_day = @t_day
     next_month = cur_month + months.to_i
     
     if next_month > 12
-      @time = self.add_years(1).stamp(:datet => false, :month => 1, :day => 1)
+      @t_month = 1
+      @t_day = 1
+      self.add_years(1)
       months_left = (months - 1) - (12 - cur_month)
-      return self.add_months(months_left) if months_left > 0
+      self.add_months(months_left) if months_left > 0
     elsif next_month < 1
-      @time = self.add_years(-1).stamp(:datet => false, :month => 12)
+      @t_month = 12
+      self.add_years(-1)
     else
-      @time = self.stamp(:datet => false, :month => next_month, :day => 1)
+      @t_month = next_month
+      @t_day = 1
     end
     
     dim = self.days_in_month
     
     if dim < cur_day
-      @time = self.stamp(:datet => false, :day => dim)
+      @t_day = dim
     else
-      @time = self.stamp(:datet => false, :day => cur_day)
+      @t_day = cur_day
     end
     
     return self
@@ -265,8 +304,8 @@ class Datet
   # datet.add_years(3)
   # datet.time #> 2014-08-01 17:42:27 +0200
   def add_years(years = 1)
-    next_year = @time.year + years.to_i
-    @time = self.stamp(:datet => false, :year => next_year)
+    next_year = @t_year + years.to_i
+    @t_year = next_year
     return self
   end
   
@@ -298,12 +337,12 @@ class Datet
     
     #Thanks to ActiveSupport: http://rubydoc.info/docs/rails/2.3.8/ActiveSupport/CoreExtensions/Time/Calculations
     days_in_months = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    return days_in_months[@time.month]
+    return days_in_months[@t_month]
   end
   
   #Returns the day in the week. Monday being 1 and sunday being 6.
   def day_in_week
-    diw = @time.strftime("%w").to_i
+    diw = self.time.strftime("%w").to_i
     if diw == 0
       diw = 6
     else
@@ -315,37 +354,37 @@ class Datet
   
   #Returns the days name as a string.
   def day_name
-    return @time.strftime("%A")
+    return self.time.strftime("%A")
   end
   
   #Returns the months name as a string.
   def month_name
-    return @time.strftime("%B")
+    return self.time.strftime("%B")
   end
   
   #Returns the year as an integer.
   def year
-    return @time.year
+    return @t_year
   end
   
   #Returns the hour as an integer.
   def hour
-    return @time.hour
+    return @t_hour
   end
   
   #Returns the minute as an integer.
   def min
-    return @time.min
+    return @t_min
   end
   
   #Returns the seconds as an integer.
   def sec
-    return @time.sec
+    return @t_sec
   end
   
   #Returns the microsecond as an integer.
   def usec
-    return @time.usec
+    return @t_usec
   end
   
   #Changes the year to the given year.
@@ -353,24 +392,24 @@ class Datet
   # datet.year = 2005
   # datet.time #=> 2005-05-03 17:46:11 +0200
   def year=(newyear)
-    @time = self.stamp(:datet => false, :year => newyear)
+    @t_year = newyear.to_i
   end
   
   #Returns the month as an integer.
   def month
     @mode = :months
-    return @time.month
+    return @t_month
   end
   
   #Returns the day in month as an integer.
   def date
     @mode = :days
-    return @time.day
+    return @t_day
   end
   
   #Returns the weekday of the week as an integer. Monday being the first and sunday being the last.
   def wday_mon
-    wday = @time.wday
+    wday = self.time.wday
     return 0 if wday == 6
     return wday - 1
   end
@@ -386,7 +425,7 @@ class Datet
     if newday <= 0
       self.add_days(newday - 1)
     else
-      @time = self.stamp(:datet => false, :day => newday)
+      @t_day = newday
     end
     
     return self
@@ -399,7 +438,7 @@ class Datet
   # datet.time #=> 2012-05-09 05:36:08 +0200
   def hour=(newhour)
     newhour = newhour.to_i
-    day = @time.day
+    day = @t_day
     
     loop do
       break if newhour >= 0
@@ -413,9 +452,9 @@ class Datet
       newhour += -24
     end
     
-    @time = self.stamp(:datet => false, :hour => newhour)
+    @t_hour = newhour
     
-    self.date = day if day != @time.day
+    self.date = day if day != @t_day
     return self
   end
   
@@ -425,7 +464,7 @@ class Datet
   # datet.min = 35
   # datet.time #=> 2012-05-09 05:35:08 +0200
   def min=(newmin)
-    @time = self.stamp(:datet => false, :min => newmin.to_i)
+    @t_min = newmin.to_i
   end
   
   #Changes the second to a given new second.
@@ -434,7 +473,7 @@ class Datet
   # datet.sec = 20
   # datet.time #=> 2012-05-09 05:35:20 +0200
   def sec=(newsec)
-    @time = self.stamp(:datet => false, :sec => newsec.to_i)
+    @t_sec = newsec.to_i
   end
   
   alias :day :date
@@ -445,7 +484,7 @@ class Datet
   # datet.month = 7
   # datet.time #=> 2012-07-09 05:35:20 +0200
   def month=(newmonth)
-    @time = self.stamp(:datet => false, :month => newmonth)
+    @t_month = newmonth
   end
   
   #Turns the given argument into a new Time-object.
@@ -466,9 +505,9 @@ class Datet
   def <=>(timeobj)
     secs = Datet.arg_to_time(timeobj).to_i
     
-    if secs > @time.to_i
+    if secs > self.to_i
       return -1
-    elsif secs < @time.to_i
+    elsif secs < self.to_i
       return 1
     else
       return 0
@@ -576,7 +615,7 @@ class Datet
   #===Examples
   # time = datet.stamp(:datet => false, :min => 15, :day => 5) #=> 2012-07-05 05:15:20 +0200
   def stamp(args)
-    vars = {:year => @time.year, :month => @time.month, :day => @time.day, :hour => @time.hour, :min => @time.min, :sec => @time.sec, :usec => @time.usec}
+    vars = {:year => @t_year, :month => @t_month, :day => @t_day, :hour => @t_hour, :min => @t_min, :sec => @t_sec, :usec => @t_usec}
     
     args.each do |key, value|
       vars[key.to_sym] = value.to_i if key != :datet
@@ -597,10 +636,10 @@ class Datet
   # datet.dbstr #=> "2011-08-01 22:51:11"
   # datet.dbstr(:time => false) #=> "2011-08-01"
   def dbstr(args = {})
-    str = "#{"%04d" % @time.year}-#{"%02d" % @time.month}-#{"%02d" % @time.day}"
+    str = "#{"%04d" % @t_year}-#{"%02d" % @t_month}-#{"%02d" % @t_day}"
     
     if !args.key?(:time) or args[:time]
-      str << " #{"%02d" % @time.hour}:#{"%02d" % @time.min}:#{"%02d" % @time.sec}"
+      str << " #{"%02d" % @t_hour}:#{"%02d" % @t_min}:#{"%02d" % @t_sec}"
     end
     
     return str
@@ -641,7 +680,7 @@ class Datet
   #===Examples
   # Datet.new.day_of_year #=> 123
   def day_of_year
-    return @time.strftime("%j").to_i
+    return self.time.strftime("%j").to_i
   end
   
   #Returns the day as a localized string.
@@ -649,7 +688,7 @@ class Datet
   # Datet.new.day_str #=> "Monday"
   # Datet.new.day_str(:short => true) #=> "Mon"
   def day_str(args = nil)
-    ret = Datet.days_arr[@time.strftime("%w").to_i]
+    ret = Datet.days_arr[self.time.strftime("%w").to_i]
     if args.is_a?(Hash) and args[:short]
       ret = ret.slice(0, 3)
     end
@@ -695,10 +734,10 @@ class Datet
     
     if !args.key?(:date) or args[:date]
       date_shown = true
-      str << "#{"%02d" % @time.day}/#{"%02d" % @time.month}"
+      str << "#{"%02d" % @t_day}/#{"%02d" % @t_month}"
       
       if !args.key?(:year) or args[:year]
-        str << " #{"%04d" % @time.year}"
+        str << " #{"%04d" % @t_year}"
       end
     end
     
@@ -706,7 +745,7 @@ class Datet
       show_time = true
       
       if args.key?(:zerotime) and !args[:zerotime]
-        if @time.hour == 0 and @time.min == 0
+        if @t_hour == 0 and @t_min == 0
           show_time = false
         end
       end
@@ -714,7 +753,7 @@ class Datet
       if show_time
         time_shown = true
         str << " - " if date_shown
-        str << "#{"%02d" % @time.hour}:#{"%02d" % @time.min}"
+        str << "#{"%02d" % @t_hour}:#{"%02d" % @t_min}"
       end
     end
     
@@ -733,8 +772,6 @@ class Datet
       return Datet.new(timestr.to_time)
     elsif timestr.is_a?(Datet)
       return timestr
-    elsif timestr == nil
-      return Datet.in("1970-01-01")
     end
     
     if match = timestr.to_s.match(/^(\d+)\/(\d+) (\d+)/)
@@ -875,19 +912,19 @@ class Datet
   end
   
   def loc_wday
-    return _(@time.strftime("%A"))
+    return _(self.time.strftime("%A"))
   end
   
   def loc_wday_small
-    return _(@time.strftime("%a"))
+    return _(self.time.strftime("%a"))
   end
   
   def loc_month
-    return _(@time.strftime("%B"))
+    return _(self.time.strftime("%B"))
   end
   
   def to_s
-    return @time.to_s
+    return self.time.to_s
   end
   
   #This returns a code-string that can be used to recreate the Datet-object.
@@ -895,7 +932,7 @@ class Datet
   # code = datet.code #=> "1985061710000000000"
   # newdatet = Datet.in(code) #=> 1985-06-17 10:00:00 +0200
   def code
-    return "#{"%04d" % @time.year}#{"%02d" % @time.month}#{"%02d" % @time.day}#{"%02d" % @time.hour}#{"%02d" % @time.min}#{"%02d" % @time.sec}#{"%05d" % @time.usec}"
+    return "#{"%04d" % @t_year}#{"%02d" % @t_month}#{"%02d" % @t_day}#{"%02d" % @t_hour}#{"%02d" % @t_min}#{"%02d" % @t_sec}#{"%05d" % @t_usec}"
   end
   
   #Returns the unix timestamp for this object.
@@ -903,7 +940,7 @@ class Datet
   # datet.unixt #=> 487843200
   # datet.to_i #=> 487843200
   def unixt
-    return @time.to_i
+    return self.time.to_i
   end
   
   alias :to_i :unixt
@@ -912,7 +949,7 @@ class Datet
   #===Examples
   # datet.httpdate #=> "Mon, 17 Jun 1985 08:00:00 GMT"
   def httpdate
-    return @time.httpdate
+    return self.time.httpdate
   end
   
   #Returns various information about the offset as a hash.
@@ -920,7 +957,7 @@ class Datet
   # datet.time #=> 1985-06-17 10:00:00 +0200
   # datet.offset_info #=> {:sign=>"+", :hours=>2, :mins=>0, :secs=>0}
   def offset_info
-    offset_secs = @time.gmt_offset
+    offset_secs = self.time.gmt_offset
     
     offset_hours = (offset_secs.to_f / 3600.0).floor
     offset_secs -= offset_hours * 3600
@@ -954,7 +991,7 @@ class Datet
   #===Examples
   # datet.localtime_str #=> "1985-06-17 10:00:00 +0200"
   def localtime_str
-    return "#{"%04d" % @time.year}-#{"%02d" % @time.month}-#{"%02d" % @time.day} #{"%02d" % @time.hour}:#{"%02d" % @time.min}:#{"%02d" % @time.sec} #{self.offset_str}"
+    return "#{"%04d" % @t_year}-#{"%02d" % @t_month}-#{"%02d" % @t_day} #{"%02d" % @t_hour}:#{"%02d" % @t_min}:#{"%02d" % @t_sec} #{self.offset_str}"
   end
   
   #Returns a human readable string based on the difference from the current time and date.
@@ -980,7 +1017,8 @@ class Datet
       :right_now_str => "right now"
     }.merge(args)
     
-    secs_ago = Time.now.to_i - @time.to_i
+    secs_ago = Time.now.to_i - self.to_i
+    
     mins_ago = secs_ago.to_f / 60.0
     hours_ago = mins_ago / 60.0
     days_ago = hours_ago / 24.0
@@ -1042,8 +1080,8 @@ class Datet
     #Generate normal string.
     date_str = ""
     
-    if now.day != @time.day and now.month == @time.month and now.year == @time.year
-      last_digit = @time.day.to_s[-1, 1].to_i
+    if now.day != @t_day and now.month == @t_month and now.year == @t_year
+      last_digit = @t_day.to_s[-1, 1].to_i
       
       if ending = args[:number_endings][last_digit]
         #ignore.
@@ -1051,17 +1089,17 @@ class Datet
         ending = "."
       end
       
-      date_str << "#{@time.day}#{ending} "
-    elsif now.day != @time.day or now.month != @time.month or now.year != @time.year
-      date_str << "#{@time.day}/#{@time.month} "
+      date_str << "#{@t_day}#{ending} "
+    elsif now.day != @t_day or now.month != @t_month or now.year != @t_year
+      date_str << "#{@t_day}/#{@t_month} "
     end
     
-    if now.year != @time.year
-      date_str << "#{@time.year} "
+    if now.year != @t_year
+      date_str << "#{@t_year} "
     end
     
     if args[:time]
-      date_str << "#{@time.hour}:#{"%02d" % @time.min}"
+      date_str << "#{@t_hour}:#{"%02d" % @t_min}"
     end
     
     return date_str
