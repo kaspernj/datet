@@ -597,10 +597,10 @@ class Datet
   # datet.dbstr #=> "2011-08-01 22:51:11"
   # datet.dbstr(:time => false) #=> "2011-08-01"
   def dbstr(args = {})
-    str = "%04d" % @time.year.to_s + "-" + "%02d" % @time.month.to_s + "-" + "%02d" % @time.day.to_s
+    str = "#{"%04d" % @time.year}-#{"%02d" % @time.month}-#{"%02d" % @time.day}"
     
     if !args.key?(:time) or args[:time]
-      str << " " + "%02d" % @time.hour.to_s + ":" + "%02d" % @time.min.to_s + ":" + "%02d" % @time.sec.to_s
+      str << " #{"%02d" % @time.hour}:#{"%02d" % @time.min}:#{"%02d" % @time.sec}"
     end
     
     return str
@@ -618,9 +618,7 @@ class Datet
     end
     
     return false if Datet.is_nullstamp?(date_string)
-    
-    require "#{$knjpath}autoload/parsedate"
-    return Datet.new(Time.local(*ParseDate.parsedate(date_string.to_s)))
+    return Datet.new(Time.local(*Date.parse(date_string.to_s)))
   end
   
   #Alias for 'from_dbstr'.
@@ -697,10 +695,10 @@ class Datet
     
     if !args.key?(:date) or args[:date]
       date_shown = true
-      str << "%02d" % @time.day.to_s + "/" + "%02d" % @time.month.to_s
+      str << "#{"%02d" % @time.day}/#{"%02d" % @time.month}"
       
       if !args.key?(:year) or args[:year]
-        str << " " + "%04d" % @time.year.to_s
+        str << " #{"%04d" % @time.year}"
       end
     end
     
@@ -716,7 +714,7 @@ class Datet
       if show_time
         time_shown = true
         str << " - " if date_shown
-        str << "%02d" % @time.hour.to_s + ":" + "%02d" % @time.min.to_s
+        str << "#{"%02d" % @time.hour}:#{"%02d" % @time.min}"
       end
     end
     
@@ -914,7 +912,6 @@ class Datet
   #===Examples
   # datet.httpdate #=> "Mon, 17 Jun 1985 08:00:00 GMT"
   def httpdate
-    require "time"
     return @time.httpdate
   end
   
