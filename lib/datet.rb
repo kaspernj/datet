@@ -1,5 +1,3 @@
-require "time"
-
 #This class handels various time- and date-specific behaviour in a friendly way.
 #===Examples
 # datet = Datet.new #=> 2012-05-03 20:35:16 +0200
@@ -7,6 +5,32 @@ require "time"
 # datet.months + 5 #=> 2012-10-03 20:35:16 +0200
 # datet.days + 64 #=> 2012-12-06 20:35:16 +010
 class Datet
+  @@months_lcase = {
+    "jan" => 1,
+    "january" => 1,
+    "feb" => 2,
+    "february" => 2,
+    "mar" => 3,
+    "march" => 3,
+    "apr" => 4,
+    "april" => 4,
+    "may" => 5,
+    "jun" => 6,
+    "june" => 6,
+    "jul" => 7,
+    "july" => 7,
+    "aug" => 8,
+    "august" => 8,
+    "sep" => 9,
+    "september" => 9,
+    "oct" => 10,
+    "october" => 11,
+    "nov" => 11,
+    "november" => 11,
+    "dec" => 12,
+    "december" => 12
+  }
+  
   #Initializes the object. Default is the current time. A time-object can be given.
   def initialize(time = Time.now, *args)
     if time.is_a?(Time)
@@ -880,34 +904,8 @@ class Datet
   # Datet.month_str_to_no("DECEMBER") #=> 12
   # Datet.month_str_to_no("kasper") #=> <Error>-raised
   def self.month_str_to_no(str)
-    ret = {
-      "jan" => 1,
-      "january" => 1,
-      "feb" => 2,
-      "february" => 2,
-      "mar" => 3,
-      "march" => 3,
-      "apr" => 4,
-      "april" => 4,
-      "may" => 5,
-      "jun" => 6,
-      "june" => 6,
-      "jul" => 7,
-      "july" => 7,
-      "aug" => 8,
-      "august" => 8,
-      "sep" => 9,
-      "september" => 9,
-      "oct" => 10,
-      "october" => 11,
-      "nov" => 11,
-      "november" => 11,
-      "dec" => 12,
-      "december" => 12
-    }
-    
     str = str.to_s.downcase.strip
-    return ret[str] if ret.key?(str)
+    return @@months_lcase[str] if @@months_lcase.key?(str)
     raise "No month to return from that string: '#{str}'."
   end
   
@@ -949,6 +947,7 @@ class Datet
   #===Examples
   # datet.httpdate #=> "Mon, 17 Jun 1985 08:00:00 GMT"
   def httpdate
+    require "time"
     return self.time.httpdate
   end
   
