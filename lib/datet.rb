@@ -48,6 +48,16 @@ class Datet
   @@days_in_months = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   
   #Initializes the object. Default is the current time. A time-object can be given.
+  #=Examples
+  # datet = Datet.new #=> Datet-object with the current date and time.
+  # 
+  # time = Time.new
+  # datet = Datet.new(time) #=> Datet-object with the date and time from the given Time-object.
+  # 
+  # datet = Datet.new(1985, 06, 17) #=> Datet-object with the date 1985-06-17.
+  # datet = Datet.new(1985, 06, 17, 10) #=> Datet-object with the date 1985-06-17 10:00:00
+  # 
+  # datet = Datet.new(1985, 06, 35) #=> Datet-object with the date 1985-07-05 00:00:00. Notice the invalid day of 35 was automatically converted to the right date.
   def initialize(*args)
     if args.length == 1 and args.first.is_a?(Time)
       self.update_from_time(args.first)
@@ -170,6 +180,8 @@ class Datet
   end
   
   #Returns a new 'Time'-object based on the data of the 'Datet'-object.
+  #=Examples
+  # Datet.new.time #=> 2012-07-13 16:14:27 +0200
   def time
     return Time.new(@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec)
   end
@@ -212,18 +224,12 @@ class Datet
     cur_usecs = @t_usec
     next_usec  = cur_usecs + usecs
     
-    if next_usec >= 1000000
-      @t_usec = 0
-      self.add_secs(1)
-      usecs_left = (usecs - 1) - (1000000 - cur_usecs)
-      self.add_usecs(usecs_left) if usecs_left > 0
-    elsif next_usec < 0
-      @t_usec = 99999
-      self.add_secs(-1)
-      usecs_left = usecs + cur_usecs + 1
-      self.add_usecs(usecs_left) if usecs_left > 0
+    if next_usec >= 1000000 or next_usec <= -1000000
+      secs = (next_usec.to_f / 1000000.0).to_f.floor
+      @t_usec = next_usec - (secs * 1000000)
+      self.add_secs(secs)
     else
-      time = self.stamp(:datet => false, :usec => next_usec)
+      @t_usec = next_usec
     end
     
     return self
@@ -233,18 +239,12 @@ class Datet
   def add_secs(secs = 1)
     secs = secs.to_i
     cur_secs = @t_sec
-    next_sec  = cur_secs + secs
+    next_sec = cur_secs + secs
     
-    if next_sec >= 60
-      @t_sec = 0
-      self.add_mins(1)
-      secs_left = (secs - 1) - (60 - cur_secs)
-      self.add_secs(secs_left) if secs_left > 0
-    elsif next_sec < 0
-      @t_sec = 59
-      self.add_mins(-1)
-      secs_left = secs + cur_secs + 1
-      self.add_secs(secs_left) if secs_left > 0
+    if next_sec >= 60 or next_sec <= -60
+      mins = (next_sec.to_f / 60.0).floor
+      @t_sec = next_sec - (mins * 60)
+      self.add_mins(mins)
     else
       @t_sec = next_sec
     end
@@ -295,7 +295,7 @@ class Datet
       self.add_hours(hours_left) if hours_left > 0
     elsif next_hour < 0
       @t_hour = 23
-      .add_days(-1)
+      self.add_days(-1)
       hours_left = hours + cur_hour + 1
       self.add_hours(hours_left) if hours_left < 0
     else
@@ -312,7 +312,6 @@ class Datet
   # datet.time #=> 2012-06-01 17:42:27 +0200
   def add_days(days = 1)
     days = days.to_i
-    return self if days == 0
     dim = self.days_in_month
     cur_day = @t_day
     next_day = cur_day + days
@@ -321,13 +320,11 @@ class Datet
       @t_day = 1
       self.add_months(1)
       days_left = (days - 1) - (dim - cur_day)
-      self.add_days(days_left) if days_left > 0
-    elsif next_day <= 0
-      self.date = 1
+      self.add_days(days_left) if days_left != 0
+    elsif next_day < 0
       self.add_months(-1)
-      
       @t_day = self.days_in_month
-      days_left = days + 1
+      days_left = days + cur_day
       self.add_days(days_left) if days_left != 0
     else
       @t_day = next_day
@@ -347,12 +344,10 @@ class Datet
     cur_day = @t_day
     next_month = cur_month + months.to_i
     
-    if next_month > 12
-      @t_month = 1
-      @t_day = 1
-      self.add_years(1)
-      months_left = (months - 1) - (12 - cur_month)
-      self.add_months(months_left) if months_left > 0
+    if next_month > 12 or next_month < 0
+      years = (next_month.to_f / 12.0).floor
+      @t_month = next_month - (years * 12)
+      self.add_years(years)
     elsif next_month < 1
       @t_month = 12
       self.add_years(-1)
@@ -378,8 +373,7 @@ class Datet
   # datet.add_years(3)
   # datet.time #> 2014-08-01 17:42:27 +0200
   def add_years(years = 1)
-    next_year = @t_year + years.to_i
-    @t_year = next_year
+    @t_year = @t_year + years.to_i
     return self
   end
   

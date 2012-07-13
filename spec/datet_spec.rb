@@ -90,6 +90,43 @@ describe "Datet" do
   end
   
   it "should be able to handle invalid timestamps" do
+    datet = Datet.new(2012, 7, 13, 16, 15, 04)
+    raise "Expected dbstr to be '2012-07-13 16:15:04' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-07-13 16:15:04"
+    
+    #Test 'add_secs'.
+    datet.add_secs(120)
+    raise "Expected dbstr to be '2012-07-13 16:17:04' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-07-13 16:17:04"
+    
+    #Test 'add_days'.
+    datet.add_days(60)
+    raise "Expected dbstr to be '2012-09-11 16:17:04' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-09-11 16:17:04"
+    
+    #Test 'add_usecs'.
+    datet.add_usecs(10000000)
+    raise "Expected dbstr to be '2012-09-11 16:17:14' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-09-11 16:17:14"
+    datet.add_usecs(-10000000)
+    raise "Expected dbstr to be '2012-09-11 16:17:04' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-09-11 16:17:04"
+    
+    #Test negative 'add_secs'.
+    datet.add_secs(-125)
+    raise "Expected dbstr to be '2012-09-11 16:14:59' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-09-11 16:14:59"
+    
+    #Test negative 'add_days'.
+    datet.add_days(-62)
+    raise "Expected dbstr to be '2012-07-11 16:14:59' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-07-11 16:14:59"
+    
+    #Test 'add_months'.
+    datet.add_months(25)
+    raise "Expected dbstr to be '2014-08-11 16:14:59' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2014-08-11 16:14:59"
+    datet.add_months(-25)
+    raise "Expected dbstr to be '2012-07-11 16:14:59' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-07-11 16:14:59"
+    
+    #Test 'add_years'.
+    datet.add_years(12)
+    raise "Expected dbstr to be '2024-07-11 16:14:59' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2024-07-11 16:14:59"
+    datet.add_years(-12)
+    raise "Expected dbstr to be '2012-07-11 16:14:59' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-07-11 16:14:59"
+    
     datet = Datet.new(2012, 3, 40)
     raise "Expected dbstr to be '2012-04-09' but it wasnt: '#{datet.dbstr(:time => false)}'." if datet.dbstr(:time => false) != "2012-04-09"
     
@@ -103,10 +140,10 @@ describe "Datet" do
     raise "Expected dbstr to be '1985-06-18 05:08:00' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:08:00"
     
     datet = Datet.new(1985, 6, 17, 28, 68, 68)
-    raise "Expected dbstr to be '1985-06-18 05:09:08' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:08"
+    raise "Expected dbstr to be '1985-06-18 05:09:09' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:09"
     
     datet = Datet.new(1985, 6, 17, 28, 68, 68, 1000008)
-    raise "Expected dbstr to be '1985-06-18 05:09:09' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:09"
+    raise "Expected dbstr to be '1985-06-18 05:09:10' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:10"
   end
   
   it "should be able to convert day-strings into numbers" do
