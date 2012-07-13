@@ -44,74 +44,114 @@ class Datet
     @@days_lcase[key[0, 3]] = val
   end
   
+  #Thanks to ActiveSupport: http://rubydoc.info/docs/rails/2.3.8/ActiveSupport/CoreExtensions/Time/Calculations
+  @@days_in_months = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   
   #Initializes the object. Default is the current time. A time-object can be given.
-  def initialize(time = Time.now, *args)
-    if time.is_a?(Time)
-      self.update_from_time(time)
-    else
-      begin
-        time = Time.new(*([time] | args))
-        self.update_from_time(time)
-      rescue ArgumentError => e
-        days_left = 0
-        months_left = 0
-        hours_left = 0
-        mins_left = 0
-        secs_left = 0
-        usecs_left = 0
-        
-        #Check larger month the allowed.
-        if args[0] and args[0] > 12
-          months_left = args[0] - 12
-          args[0] = 12
-        end
-        
-        #Check larger date than allowed.
-        datet = Datet.new(time, args[0], 1)
-        dim = datet.days_in_month
-        
-        if args[1] and args[1] > dim
-          days_left = args[1] - dim
-          args[1] = dim if days_left > 0
-        end
-        
-        #Check larger hour than allowed.
-        if args[2] and args[2] >= 24
-          hours_left = args[2] + 1
-          args[2] = 0
-        end
-        
-        #Check larger minute than allowed.
-        if args[3] and args[3] >= 60
-          mins_left = args[3] + 1
-          args[3] = 0
-        end
-        
-        #Check larger secs than allowed.
-        if args[4] and args[4] >= 60
-          secs_left = args[4] + 1
-          args[4] = 0
-        end
-        
-        #Check larger usecs than allowed.
-        if args[5] and args[5] >= 60
-          usecs_left = args[5] + 1
-          args[5] = 0
-        end
-        
-        #Generate new stamp.
-        time = Time.new(*([time] | args))
-        self.update_from_time(time)
-        
-        self.mins + mins_left if mins_left > 0
-        self.hours + hours_left if hours_left > 0
-        self.days + days_left if days_left > 0
-        self.months + months_left if months_left > 0
-        self.secs + secs_left if secs_left > 0
-        self.usecs + usecs_left if usecs_left > 0
+  def initialize(*args)
+    if args.length == 1 and args.first.is_a?(Time)
+      self.update_from_time(args.first)
+      return nil
+    elsif args.empty?
+      tnow = Time.now
+      args = [tnow.year, tnow.month, tnow.day, tnow.hour, tnow.min, tnow.sec, tnow.usec]
+    end
+    
+    days_left = 0
+    months_left = 0
+    hours_left = 0
+    mins_left = 0
+    secs_left = 0
+    usecs_left = 0
+    
+    #Check larger month the allowed.
+    if args[1] and args[1] > 12
+      months_left = args[1] - 12
+      args[1] = 12
+    end
+    
+    #Check larger date than allowed.
+    if args[1]
+      dim = Datet.days_in_month(args[0], args[1])
+      if args[2] and args[2] > dim
+        days_left = args[2] - dim
+        args[2] = dim if days_left > 0
       end
     end
+    
+    #Check larger hour than allowed.
+    if args[3] and args[3] >= 24
+      hours_left = args[3] + 1
+      args[3] = 0
+    end
+    
+    #Check larger minute than allowed.
+    if args[4] and args[4] >= 60
+      mins_left = args[4] + 1
+      args[4] = 0
+    end
+    
+    #Check larger secs than allowed.
+    if args[5] and args[5] >= 60
+      secs_left = args[5] + 1
+      args[5] = 0
+    end
+    
+    #Check larger usecs than allowed.
+    if args[6] and args[6] >= 1000000
+      usecs_left = args[6] + 1
+      args[6] = 0
+    end
+    
+    #Generate new stamp.
+    if args[0]
+      @t_year = args[0]
+    else
+      @t_year = Time.now.year
+    end
+    
+    if args[1]
+      @t_month = args[1]
+    else
+      @t_month = 1
+    end
+    
+    if args[2]
+      @t_day = args[2]
+    else
+      @t_day = 1
+    end
+    
+    if args[3]
+      @t_hour = args[3]
+    else
+      @t_hour = 0
+    end
+    
+    if args[4]
+      @t_min = args[4]
+    else
+      @t_min = 0
+    end
+    
+    if args[5]
+      @t_sec = args[5]
+    else
+      @t_sec = 0
+    end
+    
+    if args[6]
+      @t_usec = args[6]
+    else
+      @t_usec = 0
+    end
+    
+    self.add_mins(mins_left) if mins_left > 0
+    self.add_hours(hours_left) if hours_left > 0
+    self.add_days(days_left) if days_left > 0
+    self.add_months(months_left) if months_left > 0
+    self.add_secs(secs_left) if secs_left > 0
+    self.add_usecs(usecs_left) if usecs_left > 0
   end
   
   #Updates the current variables to the given time.
@@ -129,7 +169,7 @@ class Datet
     nil
   end
   
-  #Returns a new Time-object based on the data of the Datet-object.
+  #Returns a new 'Time'-object based on the data of the 'Datet'-object.
   def time
     return Time.new(@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec)
   end
@@ -166,19 +206,19 @@ class Datet
     end
   end
   
-  #Add a given amount of seconds to the object.
+  #Add a given amount of micro-seconds to the object.
   def add_usecs(usecs = 1)
     usecs = usecs.to_i
     cur_usecs = @t_usec
     next_usec  = cur_usecs + usecs
     
-    if next_usec >= 60
+    if next_usec >= 1000000
       @t_usec = 0
       self.add_secs(1)
-      usecs_left = (usecs - 1) - (60 - cur_usecs)
+      usecs_left = (usecs - 1) - (1000000 - cur_usecs)
       self.add_usecs(usecs_left) if usecs_left > 0
     elsif next_usec < 0
-      @t_usec = 59
+      @t_usec = 99999
       self.add_secs(-1)
       usecs_left = usecs + cur_usecs + 1
       self.add_usecs(usecs_left) if usecs_left > 0
@@ -199,7 +239,7 @@ class Datet
       @t_sec = 0
       self.add_mins(1)
       secs_left = (secs - 1) - (60 - cur_secs)
-      return self.add_secs(secs_left) if secs_left > 0
+      self.add_secs(secs_left) if secs_left > 0
     elsif next_sec < 0
       @t_sec = 59
       self.add_mins(-1)
@@ -367,11 +407,14 @@ class Datet
   # datet = Datet.new
   # print "There are #{datet.days_in_month} days in the current month."
   def days_in_month
-    return 29 if month == 2 and Datet.gregorian_leap?(self.year)
-    
-    #Thanks to ActiveSupport: http://rubydoc.info/docs/rails/2.3.8/ActiveSupport/CoreExtensions/Time/Calculations
-    days_in_months = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    return days_in_months[@t_month]
+    return Datet.days_in_month(@t_year, @t_month)
+  end
+  
+  #Class-method for days in month.
+  def self.days_in_month(year, month)
+    raise "Invalid month: '#{month}'." if month.to_i <= 0
+    return 29 if month == 2 and Datet.gregorian_leap?(year)
+    return @@days_in_months[month]
   end
   
   #Returns the day in the week. Monday being 1 and sunday being 6.
@@ -795,15 +838,14 @@ class Datet
     if match = timestr_t.match(/^(\d+)\/(\d+) (\d+)/)
       #MySQL date format
       timestr = timestr.gsub(match[0], "")
-      date = match[1]
-      month = match[2]
-      year = match[3]
+      date = match[1].to_i
+      month = match[2].to_i
+      year = match[3].to_i
       
       if match = timestr.match(/\s*(\d+):(\d+)/)
         #MySQL datetime format
-        timestr = timestr.gsub(match[0], "")
-        hour = match[1]
-        minute = match[2]
+        hour = match[1].to_i
+        minute = match[2].to_i
       end
       
       return Datet.new(year, month, date, hour, minute)
@@ -954,6 +996,11 @@ class Datet
   
   def to_s
     return self.time.to_s
+  end
+  
+  #Returns arguments in an array.
+  def to_a
+    return [@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec, @t_usec]
   end
   
   #Returns the HTTP-date that can be used in headers and such.

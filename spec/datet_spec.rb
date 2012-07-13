@@ -2,10 +2,16 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "Datet" do
   it "should have the same 'to_i' as normal time" do
-    time_i = Time.now.to_i
-    datet_i = Datet.new.to_i
+    time = Time.now
+    datet = Datet.new
     
-    raise "Expected to be the same but they werent: #{time_i}  vs  #{datet_i}" if time_i != datet_i
+    test_methods = [:year, :month, :day, :hour, :min, :sec, :to_i]
+    test_methods.each do |method|
+      tc = time.__send__(method)
+      dc = datet.__send__(method)
+      
+      raise "Expected '#{method}'-calls to be the same but they werent: #{tc}  vs  #{dc}   (now: #{Time.now.__send__(method)})" if tc != dc
+    end
   end
   
   it "should be able to make ago-strings" do
@@ -35,11 +41,12 @@ describe "Datet" do
   
   #From "knjrbfw_spec.rb".
   it "should be able to parse various date formats." do
-    date = Datet.in("Wed, 13 Jul 2011 16:08:51 GMT")
-    date = Datet.in("2011-07-09 00:00:00 UTC")
-    date = Datet.in("1985-06-17 01:00:00")
-    date = Datet.in("1985-06-17")
-    date = Datet.in("17/06 1985")
+    date = Datet.in("Wed, 13 Jul 2011 16:08:51 GMT").time
+    date = Datet.in("2011-07-09 00:00:00 UTC").time
+    date = Datet.in("1985-06-17 01:00:00").time
+    date = Datet.in("1985-06-17").time
+    date = Datet.in("17/06 1985").time
+    date = Datet.in("2012-06-06").time
     
     raise "Couldnt register type 1 nullstamp." if !Datet.is_nullstamp?("0000-00-00")
     raise "Couldnt register type 2 nullstamp." if !Datet.is_nullstamp?("0000-00-00 00:00:00")
@@ -98,7 +105,7 @@ describe "Datet" do
     datet = Datet.new(1985, 6, 17, 28, 68, 68)
     raise "Expected dbstr to be '1985-06-18 05:09:08' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:08"
     
-    datet = Datet.new(1985, 6, 17, 28, 68, 68, 68)
+    datet = Datet.new(1985, 6, 17, 28, 68, 68, 1000008)
     raise "Expected dbstr to be '1985-06-18 05:09:09' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:09"
   end
   
