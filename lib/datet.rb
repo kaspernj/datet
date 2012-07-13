@@ -53,8 +53,8 @@ class Datet
       self.update_from_time(args.first)
       return nil
     elsif args.empty?
-      tnow = Time.now
-      args = [tnow.year, tnow.month, tnow.day, tnow.hour, tnow.min, tnow.sec, tnow.usec]
+      self.update_from_time(Time.now)
+      return nil
     end
     
     days_left = 0
