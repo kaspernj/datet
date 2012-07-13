@@ -31,6 +31,20 @@ class Datet
     "december" => 12
   }
   
+  @@days_lcase = {
+    "monday" => 1,
+    "tuesday" => 2,
+    "wednesday" => 3,
+    "thursday" => 4,
+    "friday" => 5,
+    "saturday" => 6,
+    "sunday" => 0
+  }
+  @@days_lcase.clone.each do |key, val|
+    @@days_lcase[key[0, 3]] = val
+  end
+  
+  
   #Initializes the object. Default is the current time. A time-object can be given.
   def initialize(time = Time.now, *args)
     if time.is_a?(Time)
@@ -665,26 +679,6 @@ class Datet
     return str
   end
   
-  #Parses the date from a database-format.
-  #===Examples
-  # datet = Datet.from_dbstr("2011-08-01 22:51:11")
-  # datet.time #=> 2011-08-01 22:51:11 +0200
-  def self.from_dbstr(date_string)
-    if date_string.is_a?(Time)
-      return Datet.new(date_string)
-    elsif date_string.is_a?(Date)
-      return Datet.new(date_string.to_time)
-    end
-    
-    return false if Datet.is_nullstamp?(date_string)
-    return Datet.new(Time.local(*Date.parse(date_string.to_s)))
-  end
-  
-  #Alias for 'from_dbstr'.
-  def self.parse(str)
-    return Datet.from_dbstr(str)
-  end
-  
   #Returns true of the given stamp is a 'nullstamp'.
   #===Examples
   # Datet.is_nullstamp?("0000-00-00") #=> true
@@ -792,9 +786,13 @@ class Datet
       return Datet.new(timestr.to_time)
     elsif timestr.is_a?(Datet)
       return timestr
+    elsif Datet.is_nullstamp?(timestr)
+      return false
     end
     
-    if match = timestr.to_s.match(/^(\d+)\/(\d+) (\d+)/)
+    timestr_t = timestr.to_s.downcase.strip
+    
+    if match = timestr_t.match(/^(\d+)\/(\d+) (\d+)/)
       #MySQL date format
       timestr = timestr.gsub(match[0], "")
       date = match[1]
@@ -808,13 +806,13 @@ class Datet
         minute = match[2]
       end
       
-      return Datet.new(Time.local(year, month, date, hour, minute))
-    elsif match = timestr.to_s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-      return Datet.new(Time.local(match[3], match[2], match[1]))
-    elsif match = timestr.to_s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{5,6})$/)
+      return Datet.new(year, month, date, hour, minute)
+    elsif match = timestr_t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+      return Datet.new(match[3], match[2], match[1])
+    elsif match = timestr_t.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{5,6})$/)
       #Datet.code format
-      return Datet.new(Time.local(match[1], match[2], match[3], match[4], match[5], match[6], match[7]))
-    elsif match = timestr.to_s.match(/^\s*(\d{4})-(\d{1,2})-(\d{1,2})(|\s+(\d{2}):(\d{2}):(\d{2})(|\.\d+)\s*)(|\s+(UTC))(|\s+(\+|\-)(\d{2})(\d{2}))$/)
+      return Datet.new(match[1], match[2], match[3], match[4], match[5], match[6], match[7])
+    elsif match = timestr_t.match(/^\s*(\d{4})-(\d{1,2})-(\d{1,2})(|\s+(\d{2}):(\d{2}):(\d{2})(|\.\d+)\s*)(|\s+(utc))(|\s+(\+|\-)(\d{2})(\d{2}))$/)
       #Database date format (with possibility of .0 in the end - microseconds? -knj.
       
       if match[11] and match[13] and match[14]
@@ -831,14 +829,19 @@ class Datet
         utc_str = nil
       end
       
-      time = Time.local(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i, utc_str)
-      return Datet.new(time)
-    elsif match = timestr.to_s.match(/^\s*(\d{2,4})-(\d{1,2})-(\d{1,2})(|\s+(\d{1,2}):(\d{1,2}):(\d{1,2})(:(\d{1,2})|)\s*)$/)
-      time = Time.local(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
-      return Datet.new(time)
+      if utc_str
+        time = Time.local(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i, utc_str)
+        return Datet.new(time)
+      else
+        return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
+      end
+    elsif match = timestr_t.match(/^\s*(\d{2,4})-(\d{1,2})-(\d{1,2})(|\s+(\d{1,2}):(\d{1,2}):(\d{1,2})(:(\d{1,2})|)\s*)$/)
+      return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
+    elsif match = timestr_t.match(/^([A-z]+),\s*(\d+)\s+([A-z]+)\s+(\d+)\s+(\d+):(\d+):(\d+)\s*([A-z]+)$/)
+      return Datet.new(match[4].to_i, Datet.month_str_to_no(match[3]), match[2].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
     end
     
-    raise Knj::Errors::InvalidData.new("Wrong format: '#{timestr}', class: '#{timestr.class.name}'")
+    raise ArgumentError, "Wrong format: '#{timestr}', class: '#{timestr.class.name}'"
   end
   
   #Returns a hash with the month-no as key and month-name as value. It uses the method "_" to translate the months names. So GetText or another method has to be defined.
@@ -894,6 +897,19 @@ class Datet
     return ret
   end
   
+  #Converts a given day-name to the right day number.
+  #===Examples
+  # Datet.day_str_to_no('wed') #=> 3
+  def self.day_str_to_no(day_str)
+    day_str = day_str.to_s.strip[0, 3]
+    
+    if no = @@days_lcase[day_str]
+      return no
+    end
+    
+    raise ArgumentError, "Invalid day-string: '#{day_str}'."
+  end
+  
   #Returns the month-number for a given string (starting with 1 for january).
   #===Examples
   # Datet.month_str_to_no("JaNuArY") #=> 1
@@ -917,10 +933,6 @@ class Datet
     return _(self.time.strftime("%B"))
   end
   
-  def to_s
-    return self.time.to_s
-  end
-  
   #This returns a code-string that can be used to recreate the Datet-object.
   #===Examples
   # code = datet.code #=> "1985061710000000000"
@@ -931,13 +943,18 @@ class Datet
   
   #Returns the unix timestamp for this object.
   #===Examples
-  # datet.unixt #=> 487843200
   # datet.to_i #=> 487843200
-  def unixt
+  def to_i
     return self.time.to_i
   end
   
-  alias :to_i :unixt
+  def to_f
+    return self.time_to_f
+  end
+  
+  def to_s
+    return self.time.to_s
+  end
   
   #Returns the HTTP-date that can be used in headers and such.
   #===Examples

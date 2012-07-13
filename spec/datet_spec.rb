@@ -35,6 +35,7 @@ describe "Datet" do
   
   #From "knjrbfw_spec.rb".
   it "should be able to parse various date formats." do
+    date = Datet.in("Wed, 13 Jul 2011 16:08:51 GMT")
     date = Datet.in("2011-07-09 00:00:00 UTC")
     date = Datet.in("1985-06-17 01:00:00")
     date = Datet.in("1985-06-17")
@@ -99,5 +100,29 @@ describe "Datet" do
     
     datet = Datet.new(1985, 6, 17, 28, 68, 68, 68)
     raise "Expected dbstr to be '1985-06-18 05:09:09' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 05:09:09"
+  end
+  
+  it "should be able to convert day-strings into numbers" do
+    tests = {
+      "mon" => 1,
+      "tue" => 2,
+      "wed" => 3,
+      "thu" => 4,
+      "fri" => 5,
+      "sat" => 6,
+      "sun" => 0,
+      "monda" => 1,
+      "tuesday" => 2,
+      "wednes" => 3,
+      "thursd" => 4,
+      "frida" => 5,
+      "satur" => 6,
+      "sunday" => 0
+    }
+    
+    tests.each do |test_str, right_res|
+      res = Datet.day_str_to_no(test_str)
+      raise "Expected result: '#{right_res}' but got: '#{res}'." if res != right_res
+    end
   end
 end
