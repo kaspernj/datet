@@ -344,18 +344,25 @@ class Datet
     cur_day = @t_day
     next_month = cur_month + months.to_i
     
+    #Check if we have to alter the amount of years based on the month-change.
     if next_month > 12 or next_month < 0
       years = (next_month.to_f / 12.0).floor
-      @t_month = next_month - (years * 12)
-      self.add_years(years)
-    elsif next_month < 1
-      @t_month = 12
-      self.add_years(-1)
+      
+      newmonth = next_month - (years * 12)
+      if newmonth == 0
+        newmonth = 12
+        years -= 1
+      end
+      
+      self.month = newmonth
+      self.add_years(years) if years != 0
     else
       @t_month = next_month
       @t_day = 1
     end
     
+    
+    #If the month changed, and the day was the last day of the previous month, and there isnt that many days in the new month, set the day to the last day of the current month.
     dim = self.days_in_month
     
     if dim < cur_day
@@ -555,6 +562,8 @@ class Datet
   # datet.month = 7
   # datet.time #=> 2012-07-09 05:35:20 +0200
   def month=(newmonth)
+    newmonth = newmonth.to_i
+    raise "Invalid month: '#{newmonth}'." if newmonth <= 0
     @t_month = newmonth
   end
   
