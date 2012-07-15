@@ -176,6 +176,16 @@ describe "Datet" do
     tests.each do |test_str, right_res|
       res = Datet.day_str_to_no(test_str)
       raise "Expected result: '#{right_res}' but got: '#{res}'." if res != right_res
+      
+      #Check that the ':mfirst' is working as well (monday first day of week).
+      res2 = Datet.day_str_to_no(test_str, :mfirst => true)
+      if res == 0
+        exp = 6
+      else
+        exp = res - 1
+      end
+      
+      raise "Expected '#{exp}' but got: '#{res2}'." if res2 != exp
     end
   end
   
@@ -229,8 +239,8 @@ describe "Datet" do
       [Datet.new(2012, 7, 17), 1]
     ]
     tests.each do |data|
-      day_in_week = data[0].day_in_week
-      raise "Expected #{data[1]} but got #{day_in_week}" if day_in_week != data[1]
+      day_in_week = data[0].day_in_week(:mfirst => true)
+      raise "Expected '#{data[1]}' but got '#{day_in_week}'." if day_in_week != data[1]
       
       diw = data[0].time.strftime("%w").to_i
       if diw == 0
@@ -269,9 +279,62 @@ describe "Datet" do
     datet = Datet.new(1970, 1, 4)
     6.times do |i|
       day_str = datet.day_str
-      exp = Datet.days_arr[i]
+      exp = Datet.days[i]
       raise "Expected '#{exp}' but got '#{day_str}' for day-no: '#{i}'." if day_str != exp
       datet.days + 1
     end
+    
+    #Check date 'mfirst' works (monday first day of week).
+    days_str_sf = Datet.days
+    days_str_mf = Datet.days(:mfirst => true)
+    
+    days_str_mf.each do |key, val|
+      if key == 6
+        use_key = 0
+      else
+        use_key = key + 1
+      end
+      
+      res = days_str_sf[use_key]
+      raise "Expected '#{val}' but got: '#{res}' for key: '#{use_key}'." if res != val
+    end
+  end
+  
+  it "should be able to calculate the day of the year" do
+    tests = [
+      [Datet.new(2005, 1, 1), 1],
+      [Datet.new(2005, 12, 31), 365],
+      [Datet.new(2005, 3, 1), 60],
+      [Datet.new(2008, 3, 1), 61],
+      [Datet.new(2005, 2, 27), 58],
+      [Datet.new(2008, 2, 27), 58]
+    ]
+    
+    tests.each do |data|
+      res = data[0].day_of_year
+      raise "Expected '#{data[1]}' but got: '#{res}' for #{data[0]}." if res != data[1]
+    end
+  end
+  
+  it "should return http-dates" do
+    tests = [
+      [Datet.new(1985, 6, 17, 8), "Mon, 17 Jun 1985 08:00:00 GMT"]
+    ]
+    
+    tests.each do |data|
+      res = data[0].httpdate
+      raise "Expected: '#{data[1]}' but got: '#{res}'." if res != data[1]
+    end
+  end
+  
+  it "should be able to do finds" do
+    #This is a monday.
+    datet = Datet.new(1970, 1, 4)
+    
+    datet.find(:incr => :day, :wday => 4)
+    raise "Expected 'day_name' to be 'Thursday' but it wasnt: '#{datet.day_name}'." if datet.day_name != "Thursday"
+    
+    datet.find(:incr => :month, :wday => 5)
+    raise "Expected dbstr to be '1970-05-08' but it wasnt: '#{datet.dbstr(:time => false)}'." if datet.dbstr(:time => false) != "1970-05-08"
   end
 end

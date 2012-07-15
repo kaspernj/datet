@@ -32,23 +32,45 @@ class Datet
   }
   
   @@days_lcase = {
+    "sunday" => 0,
     "monday" => 1,
     "tuesday" => 2,
     "wednesday" => 3,
     "thursday" => 4,
     "friday" => 5,
-    "saturday" => 6,
-    "sunday" => 0
+    "saturday" => 6
   }
   @@days_lcase.clone.each do |key, val|
     @@days_lcase[key[0, 3]] = val
   end
   
+  @@day_names = {
+    0 => "Sunday",
+    1 => "Monday",
+    2 => "Tuesday",
+    3 => "Wednesday",
+    4 => "Thursday",
+    5 => "Friday",
+    6 => "Saturday"
+  }
+  
+  @@month_names = {
+    1 => "January",
+    2 => "February",
+    3 => "March",
+    4 => "April",
+    5 => "May",
+    6 => "June",
+    7 => "July",
+    8 => "August",
+    9 => "September",
+    10 => "October",
+    11 => "November",
+    12 => "December"
+  }
+  
   #Thanks to ActiveSupport: http://rubydoc.info/docs/rails/2.3.8/ActiveSupport/CoreExtensions/Time/Calculations
   @@days_in_months = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  
-  #This date is a monday. It is used to calculate up against, when we calculate 'day_in_week'.
-  @@def_date = Datet.new(1970, 1, 4)
   
   #Initializes the object. Default is the current time. A time-object can be given.
   #=Examples
@@ -199,21 +221,33 @@ class Datet
   #
   #Try to find next wednesday by Time's wday-method.
   # datet.find(:day, :wday => 3) #=> 2012-05-09 19:36:08 +0200
-  def find(incr, args)
+  def find(args)
+    #Test arguments.
+    raise ArgumentError, "Too little arguments given: #{args.length}" if args.length < 2
+    
+    args.each do |key, val|
+      case key
+        when :wday_mfirst, :wday, :incr
+        else
+          raise ArgumentError, "Invalid key in arguments: '#{key}'."
+      end
+    end
+    
+    #Find the date.
     count = 0
     while true
-      if args[:day_in_week] and self.day_in_week == args[:day_in_week]
+      if args[:wday_mfirst] and self.day_in_week(:mfirst => true) == args[:wday_mfirst]
         return self
-      elsif args[:wday] and self.time.wday == args[:wday].to_i
+      elsif args[:wday] and self.day_in_week == args[:wday]
         return self
       end
       
-      if incr == :day
+      if args[:incr] == :day
         self.add_days(1)
-      elsif incr == :month
+      elsif args[:incr] == :month
         self.add_months(1)
       else
-        raise "Invalid increment: #{incr}."
+        raise ArgumentError, "Invalid increment: #{incr}."
       end
       
       count += 1
@@ -414,7 +448,7 @@ class Datet
   
   #Class-method for days in month.
   def self.days_in_month(year, month)
-    raise "Invalid month: '#{month}'." if month.to_i <= 0
+    raise ArgumentError, "Invalid month: '#{month}'." if month.to_i <= 0
     return 29 if month == 2 and Datet.gregorian_leap?(year)
     return @@days_in_months[month]
   end
@@ -430,8 +464,23 @@ class Datet
     return 365
   end
   
-  #Returns the day in the week. Monday being 0 and sunday being 6.
-  def day_in_week
+  #Returns the day in the week.
+  #===Examples
+  #Get a monday:
+  # datet = Datet.new(1970, 1, 4)
+  # datet.day_in_week #=> 1
+  # datet.day_in_week(:mfirst = true) #=> 0
+  def day_in_week(args = nil)
+    if args
+      args.each do |key, val|
+        case key
+          when :mfirst
+          else
+            raise ArgumentError, "Invalid key in arguments: '#{key}'."
+        end
+      end
+    end
+    
     #This is a monday - 0. Use this date to calculate up against.
     def_date = Datet.new(1970, 1, 4)
     
@@ -447,10 +496,13 @@ class Datet
       diw = 0 if diw == 7
     end
     
-    if diw == 0
-      diw = 6
-    else
-      diw -= 1
+    #Monday should be the first day in the week.
+    if args and args[:mfirst]
+      if diw == 0
+        diw = 6
+      else
+        diw -= 1
+      end
     end
     
     return diw
@@ -458,12 +510,37 @@ class Datet
   
   #Returns the days name as a string.
   def day_name
-    return self.time.strftime("%A")
+    return @@day_names[self.day_in_week]
+  end
+  
+  #Returns the day as a localized string.
+  #===Examples
+  # Datet.new.day_str #=> "Monday"
+  # Datet.new.day_str(:short => true) #=> "Mon"
+  def day_str(args = nil)
+    ret = Datet.days(:trans => true)[self.day_in_week]
+    if args and args[:short]
+      ret = ret.slice(0, 3)
+    end
+    
+    return ret
+  end
+  
+  #Returns the month as a localized string.
+  #===Examples
+  # Datet.new.month_str #=> "January"
+  def month_str
+    ret = Datet.months(:trans => true)[@t_month]
+    if args and args[:short]
+      ret = ret.slice(0, 3)
+    end
+    
+    return ret
   end
   
   #Returns the months name as a string.
   def month_name
-    return self.time.strftime("%B")
+    return @@month_names[@t_month]
   end
   
   #Returns the year as an integer.
@@ -509,13 +586,6 @@ class Datet
   def date
     Thread.current[:datet_mode] = :days
     return @t_day
-  end
-  
-  #Returns the weekday of the week as an integer. Monday being the first and sunday being the last.
-  def wday_mon
-    wday = self.time.wday
-    return 0 if wday == 6
-    return wday - 1
   end
   
   #Changes the date to a given date.
@@ -589,7 +659,7 @@ class Datet
   # datet.time #=> 2012-07-09 05:35:20 +0200
   def month=(newmonth)
     newmonth = newmonth.to_i
-    raise "Invalid month: '#{newmonth}'." if newmonth <= 0
+    raise ArgumentError, "Invalid month: '#{newmonth}'." if newmonth <= 0
     @t_month = newmonth
   end
   
@@ -603,7 +673,7 @@ class Datet
     elsif datet.is_a?(Time)
       return datet
     else
-      raise "Could not handle object of class: '#{datet.class.name}'."
+      raise ArgumentError, "Could not handle object of class: '#{datet.class.name}'."
     end
   end
   
@@ -617,7 +687,7 @@ class Datet
     elsif datet.is_a?(Time)
       return Datet.new(datet)
     else
-      raise "Could not handle object of class: '#{datet.class.name}'."
+      raise ArgumentError, "Could not handle object of class: '#{datet.class.name}'."
     end
   end
   
@@ -787,20 +857,19 @@ class Datet
   #===Examples
   # Datet.new.day_of_year #=> 123
   def day_of_year
-    return self.time.strftime("%j").to_i
-  end
-  
-  #Returns the day as a localized string.
-  #===Examples
-  # Datet.new.day_str #=> "Monday"
-  # Datet.new.day_str(:short => true) #=> "Mon"
-  def day_str(args = nil)
-    ret = Datet.days_arr[self.time.strftime("%w").to_i]
-    if args and args[:short]
-      ret = ret.slice(0, 3)
+    count = @t_day
+    @@days_in_months.each_index do |key|
+      break if key >= @t_month
+      val = @@days_in_months[key]
+      
+      if key == 2 and Datet.gregorian_leap?(@t_year)
+        count += 29
+      else
+        count += val.to_i
+      end
     end
     
-    return ret
+    return count
   end
   
   #Returns how many days there is between the two timestamps given as an integer.
@@ -810,7 +879,7 @@ class Datet
   # d2.months + 5 #=> 2012-10-03 18:04:16 +0200
   # Datet.days_between(d1, d2) #=> 153
   def self.days_between(t1, t2)
-    raise "Timestamp 2 should be larger than timestamp 1." if t2 < t1
+    raise ArgumentError, "Timestamp 2 should be larger than timestamp 1." if t2 < t1
     
     doy1 = t1.day_of_year
     doy2 = t2.day_of_year
@@ -948,53 +1017,81 @@ class Datet
   end
   
   #Returns a hash with the month-no as key and month-name as value. It uses the method "_" to translate the months names. So GetText or another method has to be defined.
-  def self.months_arr(args = {})
-    ret = {
-      1 => _("January"),
-      2 => _("February"),
-      3 => _("March"),
-      4 => _("April"),
-      5 => _("May"),
-      6 => _("June"),
-      7 => _("July"),
-      8 => _("August"),
-      9 => _("September"),
-      10 => _("October"),
-      11 => _("November"),
-      12 => _("December")
-    }
+  def self.months(args = nil)
+    if args
+      args.each do |key, val|
+        case key
+          when :short, :trans
+          else
+            raise ArgumentError, "Invalid key in arguments: '#{key}'."
+        end
+      end
+    end
     
-    if args["short"]
-      ret_short = {}
-      ret.each do |key, val|
-        ret_short[key] = val[0..2]
+    ret = @@month_names.clone
+    
+    if args
+      if args[:trans]
+        ret.each do |key, val|
+          ret[key] = _(val)
+        end
       end
       
-      return ret_short
+      if args[:short]
+        ret_short = {}
+        ret.each do |key, val|
+          ret_short[key] = val[0..2]
+        end
+        
+        return ret_short
+      end
     end
     
     return ret
   end
   
   #Returns a hash with the day-number as value (starting with 1 for monday). It uses the method "_" to translate the months names.
-  def self.days_arr(args = {})
-    ret = {
-      1 => _("Monday"),
-      2 => _("Tuesday"),
-      3 => _("Wednesday"),
-      4 => _("Thursday"),
-      5 => _("Friday"),
-      6 => _("Saturday"),
-      0 => _("Sunday")
-    }
+  #===Examples
+  # Datet.days #=> {0=>"Sunday", 1=>"Monday", 2=>"Tuesday", 3=>"Wednesday", 4=>"Thursday", 5=>"Friday", 6=>"Saturday"}
+  # Datet.days(:mfirst => true) #=> {0=>"Monday", 1=>"Tuesday", 2=>"Wednesday", 3=>"Thursday", 4=>"Friday", 5=>"Saturday", 6=>"Sunday"}
+  def self.days(args = nil)
+    if args
+      args.each do |key, val|
+        case key
+          when :mfirst, :short, :trans
+          else
+            raise ArgumentError, "Unknown key in arguments: '#{key}'."
+        end
+      end
+    end
     
-    if args["short"]
-      ret_short = {}
-      ret.each do |key, val|
-        ret_short[key] = val[0..2]
+    ret = @@day_names.clone
+    
+    if args
+      if args[:trans]
+        ret.each do |key, val|
+          ret[key] = _(val)
+        end
       end
       
-      return ret_short
+      if args[:mfirst]
+        newret = {}
+        ret.each do |key, val|
+          next if key == 0
+          newret[key - 1] = val
+        end
+        newret[6] = ret[0]
+        ret = newret
+      end
+    
+      if args[:short]
+        ret_short = {}
+        ret.each do |key, val|
+          ret_short[key] = val[0..2]
+        end
+        
+        ret = ret_short
+      end
     end
     
     return ret
@@ -1003,10 +1100,18 @@ class Datet
   #Converts a given day-name to the right day number.
   #===Examples
   # Datet.day_str_to_no('wed') #=> 3
-  def self.day_str_to_no(day_str)
+  def self.day_str_to_no(day_str, args = nil)
     day_str = day_str.to_s.strip[0, 3]
     
     if no = @@days_lcase[day_str]
+      if args and args[:mfirst]
+        if no == 0
+          no = 6
+        else
+          no -= 1
+        end
+      end
+      
       return no
     end
     
@@ -1021,19 +1126,7 @@ class Datet
   def self.month_str_to_no(str)
     str = str.to_s.downcase.strip
     return @@months_lcase[str] if @@months_lcase.key?(str)
-    raise "No month to return from that string: '#{str}'."
-  end
-  
-  def loc_wday
-    return _(self.time.strftime("%A"))
-  end
-  
-  def loc_wday_small
-    return _(self.time.strftime("%a"))
-  end
-  
-  def loc_month
-    return _(self.time.strftime("%B"))
+    raise ArgumentError, "No month to return from that string: '#{str}'."
   end
   
   #This returns a code-string that can be used to recreate the Datet-object.
@@ -1044,19 +1137,23 @@ class Datet
     return "#{"%04d" % @t_year}#{"%02d" % @t_month}#{"%02d" % @t_day}#{"%02d" % @t_hour}#{"%02d" % @t_min}#{"%02d" % @t_sec}#{"%05d" % @t_usec}"
   end
   
-  #Returns the unix timestamp for this object.
+  #Returns the unix timestamp for this object (uses 'Time' to calculate).
   #===Examples
   # datet.to_i #=> 487843200
   def to_i
     return self.time.to_i
   end
   
+  #Returns the unix timestamp for this object as a float (uses 'Time' to calculate).
+  #===Examples
+  # Datet.new.to_f #=> 1342381158.0
   def to_f
-    return self.time_to_f
+    return self.time.to_f
   end
   
+  #Returns a string that describes the object.
   def to_s
-    return self.time.to_s
+    return "#{"%04d" % @t_year}-#{"%02d" % @t_month}-#{"%02d" % @t_day} #{"%02d" % @t_hour}:#{"%02d" % @t_min}:#{"%02d" % @t_sec}"
   end
   
   #Returns arguments in an array.
@@ -1068,8 +1165,7 @@ class Datet
   #===Examples
   # datet.httpdate #=> "Mon, 17 Jun 1985 08:00:00 GMT"
   def httpdate
-    require "time"
-    return self.time.httpdate
+    return "#{self.day_name[0, 3]}, #{@t_day} #{self.month_name[0, 3]} #{@t_year} #{"%02d" % @t_hour}:#{"%02d" % @t_min}:#{"%02d" % @t_sec} GMT"
   end
   
   #Returns various information about the offset as a hash.
