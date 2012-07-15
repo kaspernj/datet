@@ -92,6 +92,29 @@ class Datet
       return nil
     end
     
+    #Handle nil-support.
+    all_nil = true
+    args.each do |arg|
+      if arg != 0 and arg
+        all_nil = false
+        break
+      end
+    end
+    
+    if all_nil
+      @t_nil = true
+      @t_year = 0
+      @t_month = 0
+      @t_day = 0
+      @t_hour = 0
+      @t_min = 0
+      @t_sec = 0
+      @t_usec = 0
+      return nil
+    end
+    
+    
+    #Normal date-calculation support.
     days_left = 0
     months_left = 0
     hours_left = 0
@@ -508,6 +531,17 @@ class Datet
     return diw
   end
   
+  #Returns the week-number of the year (1..53).
+  def week_no(args = nil)
+    week_no = (self.day_of_year.to_f / 7).to_i + 1
+    
+    if args and args[:mfirst] and self.day_in_week == 1
+      week_no -= 1
+    end
+    
+    return week_no
+  end
+  
   #Returns the days name as a string.
   def day_name
     return @@day_names[self.day_in_week]
@@ -866,6 +900,12 @@ class Datet
   # Datet.is_nullstamp?("1985-06-17") #=> false
   def self.is_nullstamp?(stamp)
     return true if !stamp or stamp == "0000-00-00" or stamp == "0000-00-00 00:00:00" or stamp.to_s.strip == ""
+    return false
+  end
+  
+  #Returns true if this date is a nullstamp (0000-00-00 or something like it).
+  def nullstamp?
+    return true if @t_nil
     return false
   end
   
@@ -1343,11 +1383,23 @@ class Datet
     replaces = {}
     res = "#{str}"
     
-    str.scan(/%(\^|)([A-z])/) do |match|
-      le = "%#{match[0]}#{match[1]}"
+    str.scan(/(%%|%(\^|)([A-z]))/) do |match|
+      #The does the functionality of actually having a '%' in the string.
+      if match[0] == "%%"
+        replaces["%%"] = "%"
+        next
+      end
+      
+      #Set up replace-hash for later replace.
+      bigsign = match[1]
+      letter = match[2]
+      
+      le = "%#{bigsign}#{letter}"
+      
+      #Skip if letter has already been set.
       next if replaces.key?(le)
       
-      case match[1]
+      case letter
         when "Y"
           replaces[le] = @t_year
         when "m"
@@ -1394,18 +1446,24 @@ class Datet
           replaces[le] = self.ampm.upcase
         when "P"
           replaces[le] = self.ampm
+        when "V"
+          replaces[le] = self.week_no
+        when "W"
+          replaces[le] = self.week_no(:mfirst => true)
       end
       
       #Replace should be uppercase.
-      if match[0] == "^" and replaces.key?(le)
+      if bigsign == "^" and replaces.key?(le)
         replaces[le] = replaces[le].to_s.upcase
       end
     end
     
+    #Do the actual replaces.
     replaces.each do |key, val|
       res = res.gsub(key, val.to_s)
     end
     
+    #Return the replaced string.
     return res
   end
 end

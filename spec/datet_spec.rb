@@ -338,6 +338,17 @@ describe "Datet" do
     raise "Expected dbstr to be '1970-05-08' but it wasnt: '#{datet.dbstr(:time => false)}'." if datet.dbstr(:time => false) != "1970-05-08"
   end
   
+  it "should be able to calculate week numbers" do
+    tests = [
+      [Datet.new(1985, 1, 1), 1],
+      [Datet.new(1985, 12, 31), 53]
+    ]
+    tests.each do |data|
+      res = data[0].week_no
+      raise "Expected '#{data[1]}' but got '#{res}'." if res != data[1]
+    end
+  end
+  
   it "should emulate strftime" do
     datet = Datet.new(1985, 6, 17, 10, 30, 25)
     
@@ -370,7 +381,12 @@ describe "Datet" do
       "%w" => 1,
       "%s" => datet.to_i,
       "%P" => "am",
-      "%p" => "AM"
+      "%p" => "AM",
+      "%V" => 25,
+      "%W" => 24,
+      "%%Y" => "%Y",
+      "%%%%%Y" => "%%1985",
+      "%%%%%%%%%Y" => "%%%%1985"
     }
     
     tests.each do |key, val|
@@ -379,6 +395,18 @@ describe "Datet" do
       
       res2 = datet.time.strftime(key)
       raise "Expected res to be the same as time res but it wasnt: '#{res}', '#{res2}' for '#{key}'." if res != res2
+    end
+  end
+  
+  it "should handle nil-dates gently" do
+    datet = Datet.new(0, 0, 0)
+    
+    tests = [
+      [:dbstr, "0000-00-00 00:00:00"]
+    ]
+    tests.each do |data|
+      res = datet.__send__(data[0])
+      raise "Expected '#{data[1]}' but got '#{res}'." if res != data[1]
     end
   end
 end
