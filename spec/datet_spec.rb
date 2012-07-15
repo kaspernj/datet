@@ -1,5 +1,10 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
+#To make it gettext-compatible.
+def _(str)
+  return str
+end
+
 describe "Datet" do
   it "should have the same 'to_i' as normal time" do
     time = Time.now
@@ -171,6 +176,102 @@ describe "Datet" do
     tests.each do |test_str, right_res|
       res = Datet.day_str_to_no(test_str)
       raise "Expected result: '#{right_res}' but got: '#{res}'." if res != right_res
+    end
+  end
+  
+  it "should return the right leap years" do
+    tests = {
+      2006 => false,
+      2007 => false,
+      2008 => true,
+      2009 => false,
+      2010 => false,
+      2011 => false,
+      2012 => true,
+      2013 => false
+    }
+    tests.each do |year, expected_res|
+      res = Datet.gregorian_leap?(year)
+      raise "Expected #{expected_res} but got #{res}" if res != expected_res
+      
+      days_in_year = Datet.days_in_year(year)
+      if res
+        exp = 366
+      else
+        exp = 365
+      end
+      
+      raise "Expected #{exp} but got #{days_in_year}" if days_in_year != exp
+    end
+  end
+  
+  it "should be able to tell the amount of days between two dates" do
+    tests = [
+      {:d1 => Datet.new(2006, 1, 1), :d2 => Datet.new(2007, 1, 5), :days_exp => 369},
+      {:d1 => Datet.new(2008, 1, 1), :d2 => Datet.new(2009, 1, 5), :days_exp => 370},
+      {:d1 => Datet.new(2006, 1, 1), :d2 => Datet.new(2009, 1, 5), :days_exp => 1100},
+      {:d1 => Datet.new(2000, 1, 1), :d2 => Datet.new(2010, 1, 5), :days_exp => 3657}
+    ]
+    tests.each do |data|
+      days_betw = Datet.days_between(data[:d1], data[:d2])
+      raise "Expected #{data[:days_exp]} but got #{days_betw}" if days_betw != data[:days_exp]
+    end
+  end
+  
+  it "should be able to calculate the correct week days" do
+    tests = [
+      [Datet.new(1905, 1, 1), 6],
+      [Datet.new(1930, 1, 1), 2],
+      [Datet.new(1940, 1, 1), 0],
+      [Datet.new(1969, 12, 31), 2],
+      [Datet.new(2012, 7, 15), 6],
+      [Datet.new(2012, 7, 16), 0],
+      [Datet.new(2012, 7, 17), 1]
+    ]
+    tests.each do |data|
+      day_in_week = data[0].day_in_week
+      raise "Expected #{data[1]} but got #{day_in_week}" if day_in_week != data[1]
+      
+      diw = data[0].time.strftime("%w").to_i
+      if diw == 0
+        diw = 6
+      else
+        diw -= 1
+      end
+      
+      raise "Time-method didnt return the same: #{diw}, #{day_in_week}" if diw != day_in_week
+    end
+  end
+  
+  it "should be compareable" do
+    tests = [
+      [Datet.new(2012, 6, 1, 14, 1, 1), Datet.new(2010, 6, 1, 14, 1, 1)],
+      [Datet.new(2012, 6, 1, 14, 1, 1), Datet.new(2012, 5, 1, 14, 1, 1)],
+      [Datet.new(2012, 6, 2, 14, 1, 1), Datet.new(2012, 6, 1, 14, 1, 1)],
+      [Datet.new(2012, 6, 1, 14, 1, 1), Datet.new(2012, 6, 1, 13, 1, 1)]
+    ]
+    
+    tests.each do |data|
+      d1 = Datet.new(data[0])
+      d2 = Datet.new(data[1])
+      
+      res_b = data[0] > data[1]
+      res_s = data[0] < data[1]
+      res_e = data[0] == data[1]
+      
+      raise "Expected 'res_bigger' to be true but it wasnt: #{res_b}" if res_b != true
+      raise "Expected 'res_smaller' to be false but it wasnt: #{res_s}" if res_s != false
+      raise "Expected 'res_equal' to be false but it wasnt: #{res_e}" if res_e != false
+    end
+  end
+  
+  it "should be able to return day-strings" do
+    datet = Datet.new(1970, 1, 4)
+    6.times do |i|
+      day_str = datet.day_str
+      exp = Datet.days_arr[i]
+      raise "Expected '#{exp}' but got '#{day_str}' for day-no: '#{i}'." if day_str != exp
+      datet.days + 1
     end
   end
 end

@@ -47,6 +47,9 @@ class Datet
   #Thanks to ActiveSupport: http://rubydoc.info/docs/rails/2.3.8/ActiveSupport/CoreExtensions/Time/Calculations
   @@days_in_months = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   
+  #This date is a monday. It is used to calculate up against, when we calculate 'day_in_week'.
+  @@def_date = Datet.new(1970, 1, 4)
+  
   #Initializes the object. Default is the current time. A time-object can be given.
   #=Examples
   # datet = Datet.new #=> Datet-object with the current date and time.
@@ -392,9 +395,7 @@ class Datet
   #   print "2005 is not a gregorian-leap year."
   # end
   def self.gregorian_leap?(y)
-    if Date.respond_to?(:gregorian_leap?)
-      return Date.gregorian_leap?(y)
-    elsif y % 4 == 0 && y % 100 != 0
+    if y % 4 == 0 && y % 100 != 0
       return true
     elsif y % 400 == 0
       return true
@@ -418,9 +419,34 @@ class Datet
     return @@days_in_months[month]
   end
   
-  #Returns the day in the week. Monday being 1 and sunday being 6.
+  #Returns the amount of days in the current year.
+  def days_in_year
+    return Datet.days_in_year(@t_year)
+  end
+  
+  #Returns the amount of days in the given year.
+  def self.days_in_year(year)
+    return 366 if Datet.gregorian_leap?(year)
+    return 365
+  end
+  
+  #Returns the day in the week. Monday being 0 and sunday being 6.
   def day_in_week
-    diw = self.time.strftime("%w").to_i
+    #This is a monday - 0. Use this date to calculate up against.
+    def_date = Datet.new(1970, 1, 4)
+    
+    if self > def_date
+      days = Datet.days_between(def_date, self)
+      factor = days.to_f / 7.0
+      diw = days - (factor.floor * 7)
+    else
+      days = Datet.days_between(self, def_date)
+      factor = days.to_f / 7.0
+      diw = days - (factor.floor * 7)
+      diw = 7 - diw
+      diw = 0 if diw == 7
+    end
+    
     if diw == 0
       diw = 6
     else
@@ -581,17 +607,38 @@ class Datet
     end
   end
   
+  #Turns the given argument into a new Datet-object. Helps compare datet- to time-objects.
+  #===Examples
+  # time = Datet.arg_to_time(datet) #=> <Datet>-object
+  # time = Datet.arg_to_time(Datet.now) #=> <Datet>-object
+  def self.arg_to_datet(datet)
+    if datet.is_a?(Datet)
+      return datet
+    elsif datet.is_a?(Time)
+      return Datet.new(datet)
+    else
+      raise "Could not handle object of class: '#{datet.class.name}'."
+    end
+  end
+  
+  #Make the class compareable. Also to time-objects.
   include Comparable
   def <=>(timeobj)
-    secs = Datet.arg_to_time(timeobj).to_i
+    timeobj = Datet.arg_to_datet(timeobj)
     
-    if secs > self.to_i
-      return -1
-    elsif secs < self.to_i
-      return 1
-    else
-      return 0
+    tries = [:year, :month, :day, :hour, :min, :sec, :usec]
+    tries.each do |try|
+      res1 = timeobj.__send__(try)
+      res2 = self.__send__(try)
+      
+      if res1 > res2
+        return -1
+      elsif res1 < res2
+        return 1
+      end
     end
+    
+    return 0
   end
   
   #This method is used for adding values to the object based on the current set mode.
@@ -715,10 +762,10 @@ class Datet
   # datet.time #=> 2011-08-01 22:51:11 +0200
   # datet.dbstr #=> "2011-08-01 22:51:11"
   # datet.dbstr(:time => false) #=> "2011-08-01"
-  def dbstr(args = {})
+  def dbstr(args = nil)
     str = "#{"%04d" % @t_year}-#{"%02d" % @t_month}-#{"%02d" % @t_day}"
     
-    if !args.key?(:time) or args[:time]
+    if !args or (!args.key?(:time) or args[:time])
       str << " #{"%02d" % @t_hour}:#{"%02d" % @t_min}:#{"%02d" % @t_sec}"
     end
     
@@ -749,7 +796,7 @@ class Datet
   # Datet.new.day_str(:short => true) #=> "Mon"
   def day_str(args = nil)
     ret = Datet.days_arr[self.time.strftime("%w").to_i]
-    if args.is_a?(Hash) and args[:short]
+    if args and args[:short]
       ret = ret.slice(0, 3)
     end
     
@@ -771,15 +818,26 @@ class Datet
     yot1 = t1.year
     yot2 = t2.year
     
-    if yot1 == yot2
-      days_between = doy2 - doy1
-      return days_between
+    days = 0
+    
+    #If there is a years-difference, then neutralize the first year by counting up to next year and starting from 1/1.
+    if yot1 < yot2
+      diy = Datet.days_in_year(yot1)
+      days += diy - doy1 + 1
+      doy1 = 1
+      yot1 += 1
     end
     
-    upto = 365 - doy1
-    after = doy2
+    #For each year calculate the amount of days in that year and add them to the count.
+    while yot1 < yot2
+      diy = Datet.days_in_year(yot1)
+      days += diy
+      yot1 += 1
+    end
     
-    return upto + after
+    #Last calculate the difference between the two dates and add the count to that.
+    days_between = doy2 - doy1
+    return days_between + days
   end
   
   #Returns a string based on the date and time.
