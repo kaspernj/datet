@@ -553,6 +553,13 @@ class Datet
     return @t_hour
   end
   
+  #Returns the hour as an integer in the twelve-hour-clock.
+  def hour_thc
+    hour = @t_hour
+    hour -= 12 if hour > 12
+    return hour
+  end
+  
   #Returns the minute as an integer.
   def min
     return @t_min
@@ -566,6 +573,15 @@ class Datet
   #Returns the microsecond as an integer.
   def usec
     return @t_usec
+  end
+  
+  #Returns "am" or "pm" based on the hours values.
+  def ampm
+    if @t_hour <= 12
+      return "am"
+    else
+      return "pm"
+    end
   end
   
   #Changes the year to the given year.
@@ -1319,5 +1335,77 @@ class Datet
     end
     
     return date_str
+  end
+  
+  #See the documentation for Time#strftime. It emulates that method.
+  #This method is not complete yet and only contains some functionality.
+  def strftime(str)
+    replaces = {}
+    res = "#{str}"
+    
+    str.scan(/%(\^|)([A-z])/) do |match|
+      le = "%#{match[0]}#{match[1]}"
+      next if replaces.key?(le)
+      
+      case match[1]
+        when "Y"
+          replaces[le] = @t_year
+        when "m"
+          replaces[le] = "%02d" % @t_month
+        when "d"
+          replaces[le] = "%02d" % @t_day
+        when "e"
+          replaces[le] = @t_day
+        when "H"
+          replaces[le] = "%02d" % @t_hour
+        when "k"
+          replaces[le] = @t_hour
+        when "l"
+          replaces[le] = self.hour_thc
+        when "I"
+          replaces[le] = "%02d" % self.hour_thc
+        when "M"
+          replaces[le] = "%02d" % @t_min
+        when "S"
+          replaces[le] = "%02d" % @t_sec
+        when "T"
+          replaces[le] = "#{"%02d" % @t_hour}:#{"%02d" % @t_min}:#{"%02d" % @t_sec}"
+        when "R"
+          replaces[le] = "#{"%02d" % @t_hour}:#{"%02d" % @t_min}"
+        when "r"
+          replaces[le] = "#{"%02d" % self.hour_thc}:#{"%02d" % @t_min}:#{"%02d" % @t_sec} #{self.ampm.upcase}"
+        when "B"
+          replaces[le] = self.month_name
+        when "b", "h"
+          replaces[le] = self.month_name[0, 3]
+        when "j"
+          replaces[le] = self.day_of_year
+        when "A"
+          replaces[le] = self.day_name
+        when "a"
+          replaces[le] = self.day_name[0, 3]
+        when "w"
+          replaces[le] = self.day_in_week
+        when "u"
+          replaces[le] = self.day_in_week(:mfirst => true) + 1
+        when "s"
+          replaces[le] = self.to_i
+        when "p"
+          replaces[le] = self.ampm.upcase
+        when "P"
+          replaces[le] = self.ampm
+      end
+      
+      #Replace should be uppercase.
+      if match[0] == "^" and replaces.key?(le)
+        replaces[le] = replaces[le].to_s.upcase
+      end
+    end
+    
+    replaces.each do |key, val|
+      res = res.gsub(key, val.to_s)
+    end
+    
+    return res
   end
 end

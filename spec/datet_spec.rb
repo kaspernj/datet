@@ -337,4 +337,48 @@ describe "Datet" do
     datet.find(:incr => :month, :wday => 5)
     raise "Expected dbstr to be '1970-05-08' but it wasnt: '#{datet.dbstr(:time => false)}'." if datet.dbstr(:time => false) != "1970-05-08"
   end
+  
+  it "should emulate strftime" do
+    datet = Datet.new(1985, 6, 17, 10, 30, 25)
+    
+    tests = {
+      "%Y" => 1985,
+      "%m" => "06",
+      "%d" => "17",
+      "%e" => 17,
+      "%H" => 10,
+      "%l" => 10,
+      "%I" => 10,
+      "%k" => 10,
+      "%M" => 30,
+      "%S" => 25,
+      "%T" => "10:30:25",
+      "%R" => "10:30",
+      "%r" => "10:30:25 AM",
+      "%p" => "am",
+      "%P" => "AM",
+      "%B" => "June",
+      "%^B" => "JUNE",
+      "%b" => "Jun",
+      "%h" => "Jun",
+      "%^b" => "JUN",
+      "%j" => 168,
+      "%A" => "Monday",
+      "%^A" => "MONDAY",
+      "%a" => "Mon",
+      "%^a" => "MON",
+      "%w" => 1,
+      "%s" => datet.to_i,
+      "%P" => "am",
+      "%p" => "AM"
+    }
+    
+    tests.each do |key, val|
+      res = datet.strftime(key)
+      raise "Expected '#{val}' but got: '#{res}' for '#{key}'." if val.to_s != res
+      
+      res2 = datet.time.strftime(key)
+      raise "Expected res to be the same as time res but it wasnt: '#{res}', '#{res2}' for '#{key}'." if res != res2
+    end
+  end
 end
