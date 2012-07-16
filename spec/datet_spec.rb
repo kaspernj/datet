@@ -409,4 +409,50 @@ describe "Datet" do
       raise "Expected '#{data[1]}' but got '#{res}'." if res != data[1]
     end
   end
+  
+  it "should not be possible to set invalid months and dates" do
+    datet = Datet.new
+    
+    begin
+      datet.month = 14
+      raise "Should have raised error."
+    rescue ArgumentError
+      #ignore
+    end
+    
+    begin
+      datet.usec = 1000005
+      raise "Should have raised error."
+    rescue ArgumentError
+      #ignore.
+    end
+    
+    begin
+      datet.sec = 61
+      raise "Should have raised error."
+    rescue ArgumentError
+      #ignore
+    end
+    
+    begin
+      datet.min = 70
+      raise "Should have raised error."
+    rescue ArgumentError
+      #ignore.
+    end
+    
+    begin
+      datet.hour = 90
+      raise "Should have raised error."
+    rescue ArgumentError
+      #ignore.
+    end
+    
+    begin
+      datet.day = 45
+      raise "Should have raised error."
+    rescue ArgumentError
+      #ignore.
+    end
+  end
 end

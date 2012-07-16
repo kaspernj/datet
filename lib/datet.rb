@@ -633,25 +633,20 @@ class Datet
   end
   
   #Returns the day in month as an integer.
-  def date
+  def day
     Thread.current[:datet_mode] = :days
     return @t_day
   end
   
-  #Changes the date to a given date.
+  #Changes the day to a given day.
   #===Examples
   # datet.time #=> 2005-05-03 17:46:11 +0200
-  # datet.date = 8
+  # datet.day = 8
   # datet.time #=> 2005-05-08 17:46:11 +0200
-  def date=(newday)
+  def day=(newday)
     newday = newday.to_i
-    
-    if newday <= 0
-      self.add_days(newday - 1)
-    else
-      @t_day = newday
-    end
-    
+    raise ArgumentError, "Invalid day: '#{newday}'." if newday < 0 or newday > self.days_in_month
+    @t_day = newday
     return self
   end
   
@@ -662,23 +657,8 @@ class Datet
   # datet.time #=> 2012-05-09 05:36:08 +0200
   def hour=(newhour)
     newhour = newhour.to_i
-    day = @t_day
-    
-    loop do
-      break if newhour >= 0
-      day += -1
-      newhour += 24
-    end
-    
-    loop do
-      break if newhour < 24
-      day += 1
-      newhour += -24
-    end
-    
+    raise ArgumentError, "Invalid hour: '#{newhour}'." if newhour < 0 or newhour > 60
     @t_hour = newhour
-    
-    self.date = day if day != @t_day
     return self
   end
   
@@ -688,7 +668,9 @@ class Datet
   # datet.min = 35
   # datet.time #=> 2012-05-09 05:35:08 +0200
   def min=(newmin)
-    @t_min = newmin.to_i
+    newmin = newmin.to_i
+    raise ArgumentError, "Invalid minute: '#{newmin}'." if newmin < 0 or newmin > 60
+    @t_min = newmin
   end
   
   #Changes the second to a given new second.
@@ -697,10 +679,17 @@ class Datet
   # datet.sec = 20
   # datet.time #=> 2012-05-09 05:35:20 +0200
   def sec=(newsec)
+    newsec = newsec.to_i
+    raise ArgumentError, "Invalid second: '#{newsec}'." if newsec < 0 or newsec > 60
     @t_sec = newsec.to_i
   end
   
-  alias :day :date
+  #Changes the usecond of the object.
+  def usec=(newusec)
+    newusec = newusec.to_i
+    raise ArgumentError, "Invalid usecond: '#{newusec}'." if newusec < 0 or newusec > 1000000
+    @t_usec = newusec
+  end
   
   #Changes the month to a given new month.
   #===Examples
@@ -709,7 +698,7 @@ class Datet
   # datet.time #=> 2012-07-09 05:35:20 +0200
   def month=(newmonth)
     newmonth = newmonth.to_i
-    raise ArgumentError, "Invalid month: '#{newmonth}'." if newmonth <= 0
+    raise ArgumentError, "Invalid month: '#{newmonth}'." if newmonth <= 0 or newmonth > 12
     @t_month = newmonth
   end
   
