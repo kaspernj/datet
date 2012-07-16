@@ -455,4 +455,25 @@ describe "Datet" do
       #ignore.
     end
   end
+  
+  it "should be able to set seconds lazy" do
+    datet = Datet.new(1985, 6, 17, 10)
+    datet.lazy_sec = 125
+    raise "Expected time to be '1985-06-17 10:02:05' but it was: '#{datet.dbstr}'." if datet.dbstr != "1985-06-17 10:02:05"
+  end
+  
+  it "should be able to set minutes lazy" do
+    datet = Datet.new(1985, 6, 17, 10)
+    datet.lazy_min = 125
+    raise "Expected time to be '1985-06-17 12:05:00' but it was: '#{datet.dbstr}'." if datet.dbstr != "1985-06-17 12:05:00"
+    
+    datet.lazy_min = 30.5
+    raise "Expected time to be '1985-06-17 12:30:30' but it was: '#{datet.dbstr}'." if datet.dbstr != "1985-06-17 12:30:30"
+  end
+  
+  it "should be able to set hours lazy" do
+    datet = Datet.new(1985, 6, 17, 10)
+    datet.lazy_hour = 28.5
+    raise "Expected time to be '1985-06-18 04:30:00' but it was: '#{datet.dbstr}'." if datet.dbstr != "1985-06-18 04:30:00"
+  end
 end

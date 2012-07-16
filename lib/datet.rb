@@ -657,9 +657,30 @@ class Datet
   # datet.time #=> 2012-05-09 05:36:08 +0200
   def hour=(newhour)
     newhour = newhour.to_i
-    raise ArgumentError, "Invalid hour: '#{newhour}'." if newhour < 0 or newhour > 60
+    raise ArgumentError, "Invalid hour: '#{newhour}'." if newhour < 0 or newhour > 24
     @t_hour = newhour
     return self
+  end
+  
+  #Changes the hour to a new hour. If more than 60 is given, then the difference is converted into added days. If decimals are given, the minute of the timestamp is sat based on those decimals.
+  def lazy_hour=(newhour)
+    newhour = newhour.to_f
+    
+    #Add days for every 24 hours given.
+    if newhour > 24
+      days = (newhour.to_f / 24.0).floor
+      newhour -= (days.to_f * 24.0)
+      self.add_days(days)
+    end
+    
+    #Convert any decimals to setting minute.
+    diff = newhour - newhour.floor
+    self.lazy_min = diff * 60 if diff > 0.0
+    
+    #Set the actual hour.
+    self.hour = newhour.floor
+    
+    self
   end
   
   #Changes the minute to a given new minute.
@@ -673,6 +694,32 @@ class Datet
     @t_min = newmin
   end
   
+  #Changes the minute to a new minute. If more than 60 is given, then the difference is converted into added hours. If decimals are given, the second of the timestamp is sat based on those decimals.
+  #===Examples
+  # datet = Datet.new #=> 2012-07-16 19:53:07
+  # datet.lazy_min = 30.5 #=> 2012-07-16 19:30:30
+  # datet.lazy_min = 90.5 #=> 2012-07-16 20:30:30
+  def lazy_min=(newmin)
+    newmin = newmin.to_f
+    raise ArgumentError, "Invalid minute: '#{newmin}'." if newmin < 0
+    
+    #Add hours for every 60 minutes given.
+    if newmin > 60
+      hours = (newmin.to_f / 60.0).floor
+      newmin -= (hours.to_f * 60.0)
+      self.add_hours(hours)
+    end
+    
+    #Convert any decimals to setting the second.
+    diff = newmin - newmin.floor
+    self.lazy_sec = diff * 60 if diff > 0.0
+    
+    #Set the actual minute.
+    @t_min = newmin.floor
+    
+    self
+  end
+  
   #Changes the second to a given new second.
   #===Examples
   # datet.time #=> 2012-05-09 05:35:08 +0200
@@ -682,6 +729,20 @@ class Datet
     newsec = newsec.to_i
     raise ArgumentError, "Invalid second: '#{newsec}'." if newsec < 0 or newsec > 60
     @t_sec = newsec.to_i
+  end
+  
+  #Changes the second to a given new second. If more than 60 is given, then the difference is converted into added minutes.
+  def lazy_sec=(newsec)
+    newsec = newsec.to_i
+    raise ArgumentError, "Invalid second: '#{newsec}'." if newsec < 0
+    
+    if newsec > 60
+      mins = (newsec.to_f / 60.0).floor
+      newsec -= (mins * 60)
+      self.add_mins(mins)
+    end
+    
+    @t_sec = newsec
   end
   
   #Changes the usecond of the object.
