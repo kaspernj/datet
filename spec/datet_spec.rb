@@ -53,6 +53,9 @@ describe "Datet" do
     date = Datet.in("17/06 1985").time
     date = Datet.in("2012-06-06").time
     
+    date = Datet.in("2012-06-20T08:25:06+0000")
+    raise "Expected '2012-06-20 08:25:06' but got: '#{date.dbstr}'." if date.dbstr != "2012-06-20 08:25:06"
+    
     raise "Couldnt register type 1 nullstamp." if !Datet.is_nullstamp?("0000-00-00")
     raise "Couldnt register type 2 nullstamp." if !Datet.is_nullstamp?("0000-00-00 00:00:00")
     raise "Registered nullstamp on valid date." if Datet.is_nullstamp?("1985-06-17")
