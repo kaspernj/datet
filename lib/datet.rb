@@ -381,7 +381,7 @@ class Datet
       self.add_months(1)
       days_left = (days - 1) - (dim - cur_day)
       self.add_days(days_left) if days_left != 0
-    elsif next_day < 0
+    elsif next_day <= 0
       self.add_months(-1)
       @t_day = self.days_in_month
       days_left = days + cur_day
@@ -667,7 +667,7 @@ class Datet
     newhour = newhour.to_f
     
     #Add days for every 24 hours given.
-    if newhour > 24
+    if newhour > 24 or newhour < 0
       days = (newhour.to_f / 24.0).floor
       newhour -= (days.to_f * 24.0)
       self.add_days(days)
@@ -701,10 +701,9 @@ class Datet
   # datet.lazy_min = 90.5 #=> 2012-07-16 20:30:30
   def lazy_min=(newmin)
     newmin = newmin.to_f
-    raise ArgumentError, "Invalid minute: '#{newmin}'." if newmin < 0
     
     #Add hours for every 60 minutes given.
-    if newmin > 60
+    if newmin > 60 or newmin < 0
       hours = (newmin.to_f / 60.0).floor
       newmin -= (hours.to_f * 60.0)
       self.add_hours(hours)
@@ -734,9 +733,8 @@ class Datet
   #Changes the second to a given new second. If more than 60 is given, then the difference is converted into added minutes.
   def lazy_sec=(newsec)
     newsec = newsec.to_i
-    raise ArgumentError, "Invalid second: '#{newsec}'." if newsec < 0
     
-    if newsec > 60
+    if newsec > 60 or newsec < 0
       mins = (newsec.to_f / 60.0).floor
       newsec -= (mins * 60)
       self.add_mins(mins)
