@@ -491,4 +491,15 @@ describe "Datet" do
     datet.lazy_hour = -3
     raise "Expected time to be '1985-05-31 21:00:00' but it was: '#{datet.dbstr}'." if datet.dbstr != "1985-05-31 21:00:00"
   end
+  
+  it "should be able to handle danish month-names" do
+    months = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"]
+    count = 0
+    months.each do |month|
+      count += 1
+      
+      res = Datet.month_str_to_no(month)
+      raise "Expected res to be '#{count}' for '#{month}' but it was: '#{res}'." if res != count
+    end
+  end
 end

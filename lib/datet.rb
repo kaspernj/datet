@@ -15,6 +15,7 @@ class Datet
     "apr" => 4,
     "april" => 4,
     "may" => 5,
+    "maj" => 5,
     "jun" => 6,
     "june" => 6,
     "jul" => 7,
@@ -24,7 +25,8 @@ class Datet
     "sep" => 9,
     "september" => 9,
     "oct" => 10,
-    "october" => 11,
+    "october" => 10,
+    "okt" => 10,
     "nov" => 11,
     "november" => 11,
     "dec" => 12,
@@ -1230,7 +1232,7 @@ class Datet
   # Datet.month_str_to_no("DECEMBER") #=> 12
   # Datet.month_str_to_no("kasper") #=> <Error>-raised
   def self.month_str_to_no(str)
-    str = str.to_s.downcase.strip
+    str = str.to_s.downcase.strip[0, 3].strip
     return @@months_lcase[str] if @@months_lcase.key?(str)
     raise ArgumentError, "No month to return from that string: '#{str}'."
   end
