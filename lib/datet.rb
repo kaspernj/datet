@@ -236,6 +236,8 @@ class Datet
     return Time.new(@t_year, @t_month, @t_day, @t_hour, @t_min, @t_sec)
   end
   
+  alias to_time time
+  
   #Goes forward day-by-day and stops at a date matching the criteria given.
   #
   #===Examples
