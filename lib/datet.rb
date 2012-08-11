@@ -1091,7 +1091,7 @@ class Datet
       return Datet.new(match[3], match[2], match[1])
     elsif match = timestr_t.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{5,6})$/)
       #Datet.code format
-      return Datet.new(match[1], match[2], match[3], match[4], match[5], match[6], match[7])
+      return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[4].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
     elsif match = timestr_t.match(/^\s*(\d{4})-(\d{1,2})-(\d{1,2})(|\s+(\d{2}):(\d{2}):(\d{2})(|\.\d+)\s*)(|\s+(utc))(|\s+(\+|\-)(\d{2})(\d{2}))$/)
       #Database date format (with possibility of .0 in the end - microseconds? -knj.
       
