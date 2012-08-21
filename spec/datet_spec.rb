@@ -503,4 +503,20 @@ describe "Datet" do
       raise "Expected res to be '#{count}' for '#{month}' but it was: '#{res}'." if res != count
     end
   end
+  
+  it "should be able to do various updates from strings" do
+    datet = Datet.new(2012, 06, 17, 10, 50, 30)
+    datet.update_from_str("09:30")
+    
+    res = datet.dbstr
+    raise "Expected '2012-06-17 09:30:30' but got: '#{res}'." if res != "2012-06-17 09:30:30"
+    
+    datet.update_from_str("4/5")
+    res = datet.dbstr
+    raise "Expected '2012-05-04 09:30:30' but got: '#{res}'." if res != "2012-05-04 09:30:30"
+    
+    datet.update_from_str("1/2 2009")
+    res = datet.dbstr
+    raise "Expected '2009-02-01 09:30:30' but got: '#{res}'." if res != "2009-02-01 09:30:30"
+  end
 end

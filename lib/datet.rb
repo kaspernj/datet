@@ -1520,4 +1520,30 @@ class Datet
     #Return the replaced string.
     return res
   end
+  
+  #Updates the date-data from a given string.
+  #===Examples
+  #  datet.dbstr #=> '2012-09-05 01:00:00'
+  #  datet.update_from_str("10:00")
+  #  datet.dbstr #=> '2012-09-05 10:00:00'
+  #  datet.update_from_str("1/2")
+  #  datet.dbstr #=> '2012-02-01 10:00:00'
+  def update_from_str(str)
+    str = str.to_s
+    
+    if match = str.match(/^\s*(\d+)\s*:\s*(\d+)\s*$/)
+      self.hour = match[1].to_i
+      self.min = match[2].to_i
+    elsif match = str.match(/^\s*(\d+)\s*\/\s*(\d+)(\s*|\s+(\d+)\s*)$/)
+      self.day = match[1].to_i
+      self.month = match[2].to_i
+      
+      year_no = match[4].to_i
+      self.year = year_no if year_no > 0
+    else
+      raise "Could not understand given string: '#{str}'."
+    end
+    
+    return self
+  end
 end
