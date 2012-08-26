@@ -1540,7 +1540,7 @@ class Datet
       
       year_no = match[4].to_i
       self.year = year_no if year_no > 0
-    elsif datet = Datet.in(str) rescue ArgumentError
+    elsif datet = Datet.in(str) rescue false
       self.update_from_time(datet.time)
     else
       raise "Could not understand given string: '#{str}'."
