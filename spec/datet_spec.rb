@@ -518,5 +518,9 @@ describe "Datet" do
     datet.update_from_str("1/2 2009")
     res = datet.dbstr
     raise "Expected '2009-02-01 09:30:30' but got: '#{res}'." if res != "2009-02-01 09:30:30"
+    
+    datet.update_from_str("2012-06-17 10:30:00")
+    res = datet.dbstr
+    raise "Expected '2012-06-17 10:30:00' but got: '#{res}'." if res != "2012-06-17 10:30:00"
   end
 end
