@@ -535,5 +535,12 @@ describe "Datet" do
       datet = Datet.random(:years => years_r)
       raise "Expected year to be within range: '#{datet.year}' '#{years_r}'." if !years_r.member?(datet.year)
     end
+    
+    1.upto(100) do
+      datet = Datet.random(years: 1..1, months: 3..5, days: 20..25)
+      raise "Expected year 1 but got: '#{datet.year}'." if datet.year != 1
+      raise "Expected month between 3 and 5 but it wasnt: '#{datet.month}'." if datet.month < 3 or datet.month > 5
+      raise "Expected day between 20 and 25 but got: '#{datet.day}'." if datet.day < 20 or datet.day > 25
+    end
   end
 end
