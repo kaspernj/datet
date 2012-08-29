@@ -1548,4 +1548,53 @@ class Datet
     
     return self
   end
+  
+  #Returns a random Datet-object within given parameters.
+  #===Examples
+  #  datet_rand = Datet.random(:years => 2003..2005) #=> Datet-object
+  def self.random(args = {})
+    #Test given arguments.
+    raise "Given argument wasnt a hash: '#{args.class.name}'." if !args.is_a?(Hash)
+    args.each do |key, val|
+      raise "Invalid key: '#{key}'." if ![:years, :months, :days, :hours, :mins, :secs].include?(key)
+    end
+    
+    #Calculate random year.
+    years = args[:years] || (1971..Time.now.year)
+    year = years.to_a.sample
+    
+    #Calculate random month.
+    months = args[:months] || (1..12)
+    month = months.to_a.sample
+    month = 1 if month < 1
+    month = 12 if month > 12
+    
+    #Calculate random day.
+    days_in_month = Datet.days_in_month(year, month)
+    days = args[:days] || (1..days_in_month)
+    day = days.to_a.sample
+    day = days_in_month if day > days_in_month
+    day = 1 if day < 1
+    
+    #Calculate random hour.
+    hours = args[:hours] || (0..23)
+    hour = hours.to_a.sample
+    hour = 0 if hour < 0
+    hour = 23 if hour > 23
+    
+    #Calculate random minute.
+    mins = args[:mins] || (0..59)
+    min = mins.to_a.sample
+    min = 0 if min < 0
+    min = 59 if min > 59
+    
+    #Calculate random second.
+    secs = args[:secs] || (0..59)
+    sec = secs.to_a.sample
+    sec = 0 if sec < 0
+    sec = 59 if sec > 59
+    
+    #Spawn object with the given random values.
+    return Datet.new(year, month, day, hour, min, sec)
+  end
 end

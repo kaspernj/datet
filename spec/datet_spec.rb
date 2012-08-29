@@ -523,4 +523,17 @@ describe "Datet" do
     res = datet.dbstr
     raise "Expected '2012-06-17 10:30:00' but got: '#{res}'." if res != "2012-06-17 10:30:00"
   end
+  
+  it "should be able to generate random dates" do
+    #Shouldnt be possible to generate random datet's with invalid dates.
+    datet = Datet.random(:days => 32..35)
+    raise "Invalid day: '#{datet.day}'." if datet.day > 31
+    
+    #It should be within the given values.
+    years_r = 2001..2010
+    1.upto(100) do
+      datet = Datet.random(:years => years_r)
+      raise "Expected year to be within range: '#{datet.year}' '#{years_r}'." if !years_r.member?(datet.year)
+    end
+  end
 end
