@@ -1126,6 +1126,11 @@ class Datet
     raise ArgumentError, "Wrong format: '#{timestr}', class: '#{timestr.class.name}'"
   end
   
+  #Creates a new Datet-object from the given Unix Timestamp.
+  def self.from_ut(unix_timestamp)
+    return Datet.new(Time.at(unix_timestamp.to_i))
+  end
+  
   #Returns a hash with the month-no as key and month-name as value. It uses the method "_" to translate the months names. So GetText or another method has to be defined.
   def self.months(args = nil)
     if args
