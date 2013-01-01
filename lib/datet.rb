@@ -1,3 +1,5 @@
+require "date" if !Kernel.const_defined?(:Date)
+
 #This class handels various time- and date-specific behaviour in a friendly way.
 #===Examples
 # datet = Datet.new #=> 2012-05-03 20:35:16 +0200
@@ -409,7 +411,7 @@ class Datet
     next_month = cur_month + months.to_i
     
     #Check if we have to alter the amount of years based on the month-change.
-    if next_month > 12 or next_month < 0
+    if next_month > 12 or next_month <= 0
       years = (next_month.to_f / 12.0).floor
       
       newmonth = next_month - (years * 12)
@@ -421,6 +423,7 @@ class Datet
       self.month = newmonth
       self.add_years(years) if years != 0
     else
+      raise "Invalid month: '#{next_month}'." if next_month <= 0 or next_month > 12
       @t_month = next_month
       @t_day = 1
     end

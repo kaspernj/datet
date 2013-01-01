@@ -99,6 +99,10 @@ describe "Datet" do
   end
   
   it "should be able to handle invalid timestamps" do
+    datet = Datet.new(2013, 1, 1, 10, 0, 0)
+    datet.add_days(-1)
+    raise "Expected dbstr to be '2012-12-31 10:00:00' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-12-31 10:00:00"
+    
     datet = Datet.new(2012, 7, 13, 16, 15, 04)
     raise "Expected dbstr to be '2012-07-13 16:15:04' but it wasnt: '#{datet.dbstr}'." if datet.dbstr != "2012-07-13 16:15:04"
     
