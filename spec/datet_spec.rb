@@ -547,4 +547,16 @@ describe "Datet" do
       raise "Expected day between 20 and 25 but got: '#{datet.day}'." if datet.day < 20 or datet.day > 25
     end
   end
+  
+  it "should be able to calculate day in the year" do
+    datet = Datet.in("1985-01-06")
+    datet.day_in_year.should eql(6)
+  end
+  
+  it "should be able to calculate age based on dates" do
+    datet = Datet.in("1985-06-17")
+    age = datet.age_in_years
+    expect = 27
+    raise "Expected #{expect} but got #{years}" if age != expect
+  end
 end

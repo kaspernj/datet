@@ -1605,4 +1605,22 @@ class Datet
     #Spawn object with the given random values.
     return Datet.new(year, month, day, hour, min, sec)
   end
+  
+  #Returns the current day in the year.
+  def day_in_year
+    day = self.day
+    
+    1.upto(self.month - 1) do |month_no|
+      day += Datet.days_in_month(self.year, month_no)
+    end
+    
+    return day
+  end
+  
+  #Returns the age in years calculated from the current time and back.
+  def age_in_years(cur = Datet.new)
+    years = (cur.year - self.year)
+    years -= 1 if cur.day_in_year < self.day_in_year
+    return years
+  end
 end
