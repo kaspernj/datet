@@ -559,4 +559,9 @@ describe "Datet" do
     expect = 27
     raise "Expected #{expect} but got #{years}" if age != expect
   end
+  
+  it "should handle a format form mssql" do
+    datet = Datet.in("2010-10-31T18:21:45.8770000")
+    datet.dbstr.should eql("2010-10-31 18:21:45")
+  end
 end
