@@ -1122,11 +1122,13 @@ class Datet
       return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
     elsif match = timestr_t.match(/^([A-z]+),\s*(\d+)\s+([A-z]+)\s+(\d+)\s+(\d+):(\d+):(\d+)\s*([A-z]+)$/)
       return Datet.new(match[4].to_i, Datet.month_str_to_no(match[3]), match[2].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
-    elsif match = timestr_t.match(/^(\d{4})-(\d{2})-(\d{2})t(\d{2}):(\d{2}):(\d{2})\+(\d{4}$)$/i)
+    elsif match = timestr_t.match(/^(\d{4})-(\d{2})-(\d{2})t(\d{2}):(\d{2}):(\d{2})\+(\d{4})$/i)
       return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[4].to_i, match[5].to_i, match[6].to_i)
-    elsif match = timestr_t.match(/^(\d{4})-(\d{2})-(\d{2})t(\d{2}):(\d{2}):(\d{2})\.(\d+)$/)
+    elsif match = timestr_t.match(/^(\d{4})-(\d{2})-(\d{2})(t|\s+)(\d{2}):(\d{2}):(\d{2})\.(\d+)(z|)$/i)
       #FIXME: Parse the weird usec at the end.
-      return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[4].to_i, match[5].to_i, match[6].to_i)
+      return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
+    elsif match = timestr_t.match(/^(\d{4})-(\d{2})-(\d{2})(t|\s+)(\d{2}):(\d{2}):(\d{2})(z|)$/i)
+      return Datet.new(match[1].to_i, match[2].to_i, match[3].to_i, match[5].to_i, match[6].to_i, match[7].to_i)
     end
     
     raise ArgumentError, "Wrong format: '#{timestr}', class: '#{timestr.class.name}'"
