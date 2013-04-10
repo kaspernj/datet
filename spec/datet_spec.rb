@@ -567,4 +567,11 @@ describe "Datet" do
     datet = Datet.in("2010-10-31T18:21:45Z")
     datet.dbstr.should eql("2010-10-31 18:21:45")
   end
+  
+  it "should be able to convert objects to database date strings" do
+    Datet.dbstr(:date => "1985-06-17").should eql("1985-06-17 00:00:00")
+    Datet.dbstr(:date => nil, :allow_null => true).should eql(nil)
+    Datet.dbstr(:date => "0000-00-00", :allow_null => false).should eql("0000-00-00 00:00:00")
+    Datet.dbstr(:date => nil, :allow_null => false).should eql("0000-00-00 00:00:00")
+  end
 end

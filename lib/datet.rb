@@ -947,6 +947,26 @@ class Datet
     return str
   end
   
+  #Returns a database-string for the given date. Can also return nil, if the :allow_null argument is true.
+  #===Examples
+  # Datet.dbstr(:date => "0000-00-00 00:00:00", :allow_null => true) #=> nil
+  # Datet.dbstr(:date => "1985-06-17") #=> "1985-06-17 00:00:00")
+  DBSTR_ALLOWED_ARGS = [:date, :allow_null]
+  def self.dbstr(args)
+    args.each do |key, val|
+      raise "Invalid argument: '#{key}'." if !DBSTR_ALLOWED_ARGS.include?(key)
+    end
+    
+    datet = Datet.in(args[:date])
+    
+    if !datet
+      return nil if args[:allow_null]
+      return "0000-00-00 00:00:00"
+    else
+      return datet.dbstr
+    end
+  end
+  
   #Returns true of the given stamp is a 'nullstamp'.
   #===Examples
   # Datet.is_nullstamp?("0000-00-00") #=> true
